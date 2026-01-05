@@ -24,3 +24,32 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Green brand variables for the dashboard */
+:root {
+  --brand-green-50: #f0fdf4;
+  --brand-green-100: #dcfce7;
+  --brand-green-300: #86efac;
+  --brand-green-500: #10b981;
+  --brand-green-600: #059669;
+  --brand-green-800: #064e3b;
+}
+
+/* Small utility to ensure inputs look good in the green theme */
+input, textarea, select {
+  border-color: rgba(5,150,105,0.15);
+}
+
+/* Layout helpers for dashboard */
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Improve table appearance on wide screens */
+@media (min-width: 768px) {
+  table th, table td {
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+  }
+}

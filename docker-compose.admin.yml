@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  admin-dashboard:
+    build: .
+    container_name: admin-dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - cucumber-tele-bot_default  # Connect to existing network
+
+networks:
+  cucumber-tele-bot_default:
+    external: true  # Use existing network from cucumber-tele-bot
+

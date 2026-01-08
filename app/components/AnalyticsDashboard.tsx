@@ -15,20 +15,48 @@ export default function AnalyticsDashboard() {
   const pageSize = 10;
   const [selectedUser, setSelectedUser] = useState<number | string | null>(null);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
+  const [selectedActions, setSelectedActions] = useState<Set<string>>(new Set());
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const auth = useAuth();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return data;
-    return data.filter(
-      (r) =>
+    const selectedActionsList = Array.from(selectedActions);
+    const selectedUsersList = Array.from(selectedUsers);
+    return data.filter((r) => {
+      // Filter by selected actions
+      if (selectedActionsList.length > 0 && !selectedActionsList.includes(String(r.event_type))) return false;
+      // Filter by selected users
+      if (selectedUsersList.length > 0 && !selectedUsersList.includes(String(r.user_id))) return false;
+      // Filter by search query
+      if (!q) return true;
+      return (
         String(r.id).includes(q) ||
         String(r.user_id).includes(q) ||
         String(r.event_type).toLowerCase().includes(q) ||
         String(r.event_data).toLowerCase().includes(q) ||
         String(r.timestamp).toLowerCase().includes(q)
-    );
-  }, [query, data]);
+      );
+    });
+  }, [query, data, selectedActions, selectedUsers]);
+
+  function toggleAction(action: string) {
+    setSelectedActions((prev) => {
+      const next = new Set(prev);
+      if (next.has(action)) next.delete(action);
+      else next.add(action);
+      return next;
+    });
+  }
+
+  function toggleUser(userId: string) {
+    setSelectedUsers((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -192,45 +220,65 @@ export default function AnalyticsDashboard() {
             <div className="mt-2 text-lg font-semibold text-green-800">{mostCommonAction(data).action || "—"}</div>
             <div className="text-sm text-green-600">{mostCommonAction(data).count} occurrences</div>
               <div className="mt-3 flex flex-col gap-3 flex-1 overflow-auto">
-               <div className="text-xs font-medium text-green-600">All actions</div>
-               <div className="mt-2 flex flex-col gap-1">
-                {(function () {
-                  const list = allActions(data);
-                  if (!list.length) return <div className="text-sm text-green-500">—</div>;
-                  return list.map((a) => (
-                    <button
-                      key={a.action}
-                      onClick={() => setSelectedAction(a.action)}
-                      className={
-                        "flex items-center justify-between rounded border px-3 py-1 text-left text-sm " +
-                        (selectedAction === a.action
-                          ? "bg-green-100 border-green-200 text-green-800"
-                          : "bg-green-50 border-green-100 text-green-700 hover:bg-green-100")
-                      }
-                    >
-                      <span className="truncate">{a.action}</span>
-                      <span className="text-xs text-green-600 ml-3">{a.count}</span>
-                    </button>
-                  ));
-                })()}
-              </div>
+               <div>
+                 <div className="text-xs font-medium text-green-600">All actions</div>
+                 <div className="mt-2 flex flex-col gap-1 max-h-64 overflow-y-auto">
+                  {(function () {
+                    const list = allActions(data);
+                    if (!list.length) return <div className="text-sm text-green-500">—</div>;
+                    return list.map((a) => (
+                      <label
+                        key={a.action}
+                        className={
+                          "flex items-center justify-between rounded border px-3 py-1 text-left text-sm " +
+                          (selectedActions.has(a.action)
+                            ? "bg-green-100 border-green-200 text-green-800"
+                            : "bg-green-50 border-green-100 text-green-700 hover:bg-green-100")
+                        }
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedActions.has(a.action)}
+                            onChange={() => toggleAction(a.action)}
+                            className="h-4 w-4"
+                          />
+                          <span className="truncate">{a.action}</span>
+                        </div>
+                        <span className="text-xs text-green-600 ml-3">{a.count}</span>
+                      </label>
+                    ));
+                  })()}
+                 </div>
+               </div>
 
               <div className="mt-3">
-                <div className="text-xs font-medium text-green-600">Top users for selected action</div>
-                <div className="mt-2 flex flex-col gap-1">
+                <div className="text-xs font-medium text-green-600">Users</div>
+                <div className="mt-2 flex flex-col gap-1 max-h-64 overflow-y-auto">
                   {(function () {
-                    const action = selectedAction ?? mostCommonAction(data).action;
-                    if (!action) return <div className="text-sm text-green-500">—</div>;
-                    const top = topUsersForAction(data, action, 10);
-                    return top.map((u) => (
-                      <button
+                    const userList = allUsers(data);
+                    if (!userList.length) return <div className="text-sm text-green-500">—</div>;
+                    return userList.map((u) => (
+                      <label
                         key={String(u.user_id)}
-                        onClick={() => setSelectedUser(u.user_id)}
-                        className="flex items-center justify-between rounded border border-green-100 bg-green-50 px-3 py-1 text-left text-sm text-green-700 hover:bg-green-100"
+                        className={
+                          "flex items-center justify-between rounded border px-3 py-1 text-left text-sm " +
+                          (selectedUsers.has(String(u.user_id))
+                            ? "bg-green-100 border-green-200 text-green-800"
+                            : "bg-green-50 border-green-100 text-green-700 hover:bg-green-100")
+                        }
                       >
-                        <span>{u.user_id}</span>
-                        <span className="text-xs text-green-600">{u.count}</span>
-                      </button>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedUsers.has(String(u.user_id))}
+                            onChange={() => toggleUser(String(u.user_id))}
+                            className="h-4 w-4"
+                          />
+                          <span className="truncate">{u.user_id}</span>
+                        </div>
+                        <span className="text-xs text-green-600 ml-3">{u.count}</span>
+                      </label>
                     ));
                   })()}
                 </div>
@@ -467,6 +515,17 @@ function allActions(rows: any[]) {
   }
   const items = Object.keys(counts).map((k) => ({ action: k, count: counts[k] }));
   items.sort((a, b) => b.count - a.count || a.action.localeCompare(b.action));
+  return items;
+}
+
+function allUsers(rows: any[]) {
+  const counts: Record<string, number> = {};
+  for (const r of rows) {
+    const k = String(r.user_id ?? "unknown");
+    counts[k] = (counts[k] || 0) + 1;
+  }
+  const items = Object.keys(counts).map((k) => ({ user_id: k, count: counts[k] }));
+  items.sort((a, b) => b.count - a.count || a.user_id.localeCompare(b.user_id));
   return items;
 }
 

@@ -13,8 +13,9 @@ export default function AppShell() {
       <div className="min-h-screen flex bg-green-50">
         <aside className="w-64 border-r bg-white/70 p-4">
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-green-800">Admin</h2>
+            <h2 className="text-lg font-semibold text-green-800">CAREP Admin</h2>
             <p className="text-xs text-green-600">Analytics & Management</p>
+            <p className="text-xs text-green-500 mt-1">Save the Children</p>
           </div>
           <nav className="flex flex-col gap-2">
             <button

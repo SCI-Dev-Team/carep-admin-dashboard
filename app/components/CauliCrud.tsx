@@ -98,7 +98,10 @@ export default function CauliCrud({ onClose }: { onClose: () => void }) {
   return (
     <div className="h-full w-full bg-white shadow-lg">
       <div className="flex items-center justify-between border-b px-4 py-3">
-        <h3 className="text-lg font-semibold text-green-800">Diseases CRUD</h3>
+        <div>
+          <h3 className="text-lg font-semibold text-green-800">Disease Management</h3>
+          <p className="text-xs text-green-600">CAREP Project - Save the Children</p>
+        </div>
         <div className="flex items-center gap-2">
           <select value={crop} onChange={(e) => setCrop(e.target.value as any)} className="rounded border px-2 py-1 text-sm">
             <option value="cauliflower">Cauliflower</option>

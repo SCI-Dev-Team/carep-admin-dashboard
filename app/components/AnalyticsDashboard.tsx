@@ -111,7 +111,11 @@ export default function AnalyticsDashboard() {
       {!auth.authed ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/95 backdrop-blur-sm p-6">
           <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-            <h2 className="mb-4 text-2xl font-semibold text-green-800">Sign in</h2>
+            <div className="mb-6 text-center">
+              <h2 className="text-2xl font-semibold text-green-800">CAREP Admin Dashboard</h2>
+              <p className="text-sm text-green-600 mt-1">Save the Children Organization</p>
+            </div>
+            <h3 className="mb-4 text-xl font-medium text-green-700">Sign in</h3>
             <form onSubmit={handleLogin} className="flex flex-col gap-4">
               <label className="flex flex-col text-sm">
                 <span className="mb-1 text-green-700">Username</span>
@@ -163,6 +167,7 @@ export default function AnalyticsDashboard() {
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-semibold text-green-800">Analytics Dashboard</h1>
+            <p className="text-sm text-green-600 mt-1">CAREP Project - Save the Children</p>
           </div>
 
           <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">

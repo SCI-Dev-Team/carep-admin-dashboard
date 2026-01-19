@@ -3,10 +3,12 @@
 import React, { useState } from "react";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import CauliCrud from "./CauliCrud";
+// @ts-ignore - badge CRUD component is added in this workspace
+import BadgeCrud from "./BadgeCrud";
 import { AuthProvider } from "./AuthContext";
 
 export default function AppShell() {
-  const [tab, setTab] = useState<"analytics" | "diseases">("analytics");
+  const [tab, setTab] = useState<"analytics" | "diseases" | "badges">("analytics");
 
   return (
     <AuthProvider>
@@ -36,11 +38,26 @@ export default function AppShell() {
             >
               Disease Management
             </button>
+            <button
+              onClick={() => setTab("badges")}
+              className={
+                "text-left rounded px-3 py-2 " +
+                (tab === "badges" ? "bg-green-100 text-green-800" : "text-green-700 hover:bg-green-50")
+              }
+            >
+              Badge Management
+            </button>
           </nav>
         </aside>
 
         <main className="flex-1 p-6">
-          {tab === "analytics" ? <AnalyticsDashboard /> : <CauliCrud onClose={() => setTab("analytics")} />}
+          {tab === "analytics" ? (
+            <AnalyticsDashboard />
+          ) : tab === "diseases" ? (
+            <CauliCrud onClose={() => setTab("analytics")} />
+          ) : (
+            <BadgeCrud onClose={() => setTab("analytics")} />
+          )}
         </main>
       </div>
     </AuthProvider>

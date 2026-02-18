@@ -5,7 +5,7 @@ module.exports = {
       // Use the Next.js start script from the admin-dashbaord package
       script: "npm",
       args: "start",
-      cwd: "/Users/thun/Desktop/Project/sci-project/cucumber-tele-bot/admin-dashbaord",
+      cwd: "/home/rileywalker1303591858/cucumber-tele-bot/admin-dashbaord",
       env: {
         NODE_ENV: "production",
         // Absolute path to uploads on the host machine (read-only is fine)

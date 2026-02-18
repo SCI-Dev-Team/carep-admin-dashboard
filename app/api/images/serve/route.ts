@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     
     // Get project base path
     const projectBasePath = process.env.UPLOADS_PATH?.replace('/uploads', '') ?? 
-      "/Users/thun/Desktop/Project/sci-project/cucumber-tele-bot";
+      "/home/rileywalker1303591858/cucumber-tele-bot";
     
     // Construct full file path
     let fullPath: string;

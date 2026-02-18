@@ -70,7 +70,7 @@ export async function GET(request: Request) {
     const labelFilter = url.searchParams.get("label");
     
     // Use project base path instead of uploads path
-    const projectBasePath = process.env.UPLOADS_PATH?.replace('/uploads', '') ?? "/Users/thun/Desktop/Project/sci-project/cucumber-tele-bot";
+    const projectBasePath = process.env.UPLOADS_PATH?.replace('/uploads', '') ?? "/home/rileywalker1303591858/cucumber-tele-bot";
     
     const rows = await withPool(async (pool) => {
       // Simplified query without leaf_diseases table join
@@ -152,7 +152,7 @@ export async function DELETE(request: Request) {
     const id = url.searchParams.get("id");
     if (!id) return new Response("Missing id", { status: 400 });
     
-    const projectBasePath = process.env.UPLOADS_PATH?.replace('/uploads', '') ?? "/Users/thun/Desktop/Project/sci-project/cucumber-tele-bot";
+    const projectBasePath = process.env.UPLOADS_PATH?.replace('/uploads', '') ?? "/home/rileywalker1303591858/cucumber-tele-bot";
     
     await withPool(async (pool) => {
       const [rows] = await pool.query(`SELECT image_file FROM user_uploads WHERE id = ?`, [id]);

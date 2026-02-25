@@ -36,7 +36,17 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const crop = (url.searchParams.get("crop") || "cauliflower").toLowerCase();
-    const table = crop === "cucumber" ? "cucumber_diseases" : "cauliflower_diseases";
+    
+    // Map crop to table name
+    let table: string;
+    if (crop === "cucumber") {
+      table = "cucumber_diseases";
+    } else if (crop === "cabbage") {
+      table = "cabbage_diseases";
+    } else {
+      table = "cauliflower_diseases";
+    }
+    
     const rows = await withPool(async (pool) => {
       const [r] = await pool.query(
         `SELECT id, disease_code, disease_en, dieseas_km, cure, symptom, reference, status FROM \`${table}\` ORDER BY id ASC`
@@ -58,7 +68,17 @@ export async function POST(request: Request) {
   try {
     const url = new URL(request.url);
     const crop = (url.searchParams.get("crop") || "cauliflower").toLowerCase();
-    const table = crop === "cucumber" ? "cucumber_diseases" : "cauliflower_diseases";
+    
+    // Map crop to table name
+    let table: string;
+    if (crop === "cucumber") {
+      table = "cucumber_diseases";
+    } else if (crop === "cabbage") {
+      table = "cabbage_diseases";
+    } else {
+      table = "cauliflower_diseases";
+    }
+    
     const body = await request.json();
     const { id, disease_code, disease_en, dieseas_km, cure, symptom, reference, status } = body;
     await withPool(async (pool) => {
@@ -82,7 +102,17 @@ export async function PUT(request: Request) {
   try {
     const url = new URL(request.url);
     const crop = (url.searchParams.get("crop") || "cauliflower").toLowerCase();
-    const table = crop === "cucumber" ? "cucumber_diseases" : "cauliflower_diseases";
+    
+    // Map crop to table name
+    let table: string;
+    if (crop === "cucumber") {
+      table = "cucumber_diseases";
+    } else if (crop === "cabbage") {
+      table = "cabbage_diseases";
+    } else {
+      table = "cauliflower_diseases";
+    }
+    
     const body = await request.json();
     const { id, disease_code, disease_en, dieseas_km, cure, symptom, reference, status } = body;
     await withPool(async (pool) => {
@@ -107,7 +137,17 @@ export async function DELETE(request: Request) {
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
     const crop = (url.searchParams.get("crop") || "cauliflower").toLowerCase();
-    const table = crop === "cucumber" ? "cucumber_diseases" : "cauliflower_diseases";
+    
+    // Map crop to table name
+    let table: string;
+    if (crop === "cucumber") {
+      table = "cucumber_diseases";
+    } else if (crop === "cabbage") {
+      table = "cabbage_diseases";
+    } else {
+      table = "cauliflower_diseases";
+    }
+    
     if (!id) return new Response("Missing id", { status: 400 });
     await withPool(async (pool) => {
       await pool.query(`DELETE FROM \`${table}\` WHERE id = ?`, [id]);

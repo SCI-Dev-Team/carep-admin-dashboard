@@ -15,7 +15,7 @@ type Disease = {
 
 export default function CauliCrud({ onClose }: { onClose: () => void }) {
   const [items, setItems] = useState<Disease[]>([]);
-  const [crop, setCrop] = useState<"cauliflower" | "cucumber">("cauliflower");
+  const [crop, setCrop] = useState<"cauliflower" | "cucumber" | "cabbage">("cauliflower");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Disease | null>(null);
@@ -106,6 +106,7 @@ export default function CauliCrud({ onClose }: { onClose: () => void }) {
           <select value={crop} onChange={(e) => setCrop(e.target.value as any)} className="rounded border px-2 py-1 text-sm">
             <option value="cauliflower">Cauliflower</option>
             <option value="cucumber">Cucumber</option>
+            <option value="cabbage">Cabbage</option>
           </select>
           <button onClick={() => fetchList()} className="rounded border px-2 py-1 text-sm text-green-700">Refresh</button>
           <button onClick={() => startEdit()} className="rounded border px-2 py-1 text-sm text-green-700">New</button>

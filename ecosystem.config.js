@@ -3,10 +3,11 @@ module.exports = {
   apps: [
     {
       name: "admin-dashboard",
-      script: "npm",
-      args: "start",
+      script: "node_modules/.bin/next",
+      args: "start -p 3000",
       // Path to the admin dashboard on the instance
       cwd: "/home/rileywalker1303591858/carep-admin-dashboard",
+      exec_mode: "fork",
       instances: 1,
       autorestart: true,
       watch: false,

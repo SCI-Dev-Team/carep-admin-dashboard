@@ -6,7 +6,6 @@ import { useAuth } from "./AuthContext";
 export default function AnalyticsDashboard() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  // auth state is provided by AuthContext
   const [query, setQuery] = useState("");
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -24,11 +23,8 @@ export default function AnalyticsDashboard() {
     const selectedActionsList = Array.from(selectedActions);
     const selectedUsersList = Array.from(selectedUsers);
     return data.filter((r) => {
-      // Filter by selected actions
       if (selectedActionsList.length > 0 && !selectedActionsList.includes(String(r.event_type))) return false;
-      // Filter by selected users
       if (selectedUsersList.length > 0 && !selectedUsersList.includes(String(r.user_id))) return false;
-      // Filter by search query
       if (!q) return true;
       return (
         String(r.id).includes(q) ||
@@ -73,7 +69,6 @@ export default function AnalyticsDashboard() {
     }
   }
 
-  // fetch analytics when auth becomes available or on mount if already authed
   async function fetchAnalytics() {
     if (!auth.basicAuth) return;
     setLoading(true);
@@ -99,326 +94,486 @@ export default function AnalyticsDashboard() {
     if (auth.authed) {
       fetchAnalytics();
     } else {
-      setData([]); // clear when logged out
+      setData([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.authed]);
 
-  // render dashboard UI but show a modal login overlay when not authenticated
+  function getEventBadgeColor(eventType: string) {
+    const colors: Record<string, string> = {
+      "menu_action": "bg-slate-100 text-slate-700",
+      "image_uploaded_and_processed": "bg-blue-100 text-blue-700",
+      "prediction_success": "bg-emerald-100 text-emerald-700",
+      "image_submitted": "bg-amber-100 text-amber-700",
+      "app_opened": "bg-purple-100 text-purple-700",
+    };
+    return colors[eventType] || "bg-gray-100 text-gray-700";
+  }
 
   return (
-    <div className="min-h-screen bg-green-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Login Modal */}
       {!auth.authed ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/95 backdrop-blur-sm p-6">
-          <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-            <div className="mb-6 text-center">
-              <h2 className="text-2xl font-semibold text-green-800">CAREP Admin Dashboard</h2>
-              <p className="text-sm text-green-600 mt-1">Save the Children Organization</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-6">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+            <div className="mb-8 text-center">
+              <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800">CAREP Admin Dashboard</h2>
+              <p className="text-sm text-slate-500 mt-1">Save the Children Organization</p>
             </div>
-            <h3 className="mb-4 text-xl font-medium text-green-700">Sign in</h3>
-            <form onSubmit={handleLogin} className="flex flex-col gap-4">
-              <label className="flex flex-col text-sm">
-                <span className="mb-1 text-green-700">Username</span>
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Username</label>
                 <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-700 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
                   placeholder="admin"
                   autoComplete="username"
                 />
-              </label>
-              <label className="flex flex-col text-sm">
-                <span className="mb-1 text-green-700">Password</span>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-700 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />
-              </label>
-              <div className="flex items-center justify-end gap-3">
+              </div>
+              {error && (
+                <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                  <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  {error}
+                </div>
+              )}
+              <div className="flex items-center gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setUsername("");
-                    setPassword("");
-                  }}
-                  className="rounded bg-blue-100 px-4 py-2 text-blue-800"
+                  onClick={() => { setUsername(""); setPassword(""); }}
+                  className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded bg-blue-600 px-4 py-2 text-white"
+                  className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50"
                   disabled={loading}
                 >
-                  {loading ? "Signing in…" : "Sign in"}
+                  {loading ? (
+                    <span className="inline-flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Signing in...
+                    </span>
+                  ) : "Sign in"}
                 </button>
               </div>
             </form>
-            {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
-            <p className="mt-4 text-xs text-green-600">Sign in with admin credentials to view dashboard.</p>
+            <p className="mt-6 text-xs text-center text-slate-500">Sign in with admin credentials to view dashboard.</p>
           </div>
         </div>
       ) : null}
-      <div className="mx-auto w-full max-w-7xl">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold text-green-800">Analytics Dashboard</h1>
-            <p className="text-sm text-green-600 mt-1">CAREP Project - Save the Children</p>
-          </div>
 
-          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-            <input
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Search id, user, type, data or timestamp"
-              className="rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-300"
-            />
-            <div className="flex items-center gap-2">
-              <button
-                onClick={exportCSV}
-                className="rounded border border-green-600 bg-white px-3 py-2 text-green-700 hover:bg-green-50"
-                title="Export visible rows to CSV"
-              >
-                Export CSV
-              </button>
-              <button
-                onClick={() => {
-                  auth.logout();
-                  setUsername("");
-                  setPassword("");
-                  setData([]);
-                }}
-                className="rounded border border-green-600 bg-white px-3 py-2 text-green-700 hover:bg-green-50"
-              >
-                Logout
-              </button>
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm">
+        <div className="mx-auto max-w-7xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="shrink-0 w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">Analytics Dashboard</h1>
+              <p className="text-sm text-slate-500 mt-0.5">CAREP Project - Save the Children</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                value={query}
+                onChange={(e) => { setQuery(e.target.value); setPage(1); }}
+                placeholder="Search events..."
+                className="w-64 rounded-lg border border-slate-300 bg-white pl-10 pr-4 py-2 text-sm text-slate-700 placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+              />
+            </div>
+            <button
+              onClick={exportCSV}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-400"
+              title="Export visible rows to CSV"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export CSV
+            </button>
+            <button
+              onClick={fetchAnalytics}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-400"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </button>
+            <button
+              onClick={() => { auth.logout(); setUsername(""); setPassword(""); setData([]); }}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-300 hover:text-red-600"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl p-6 space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-4 gap-5">
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total Events</p>
+                <p className="text-3xl font-bold text-slate-800">{data.length.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="shrink-0 w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Unique Users</p>
+                <p className="text-3xl font-bold text-emerald-600">{uniqueUsers(data)}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="shrink-0 w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Image Uploads</p>
+                <p className="text-3xl font-bold text-purple-600">{countEventType(data, "image_uploaded_and_processed")}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="shrink-0 w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Most Common</p>
+                <p className="text-lg font-bold text-amber-600 truncate">{mostCommonAction(data).action || "—"}</p>
+                <p className="text-xs text-slate-500">{mostCommonAction(data).count} occurrences</p>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="mb-6 grid gap-4 md:grid-cols-3">
-          <div className="rounded-lg bg-white p-4 shadow">
-            <div className="text-sm font-medium text-green-600">Total events</div>
-            <div className="mt-2 text-2xl font-semibold text-green-800">{data.length}</div>
+        {error && (
+          <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            {error}
           </div>
-          <div className="rounded-lg bg-white p-4 shadow">
-            <div className="text-sm font-medium text-green-600">Unique users</div>
-            <div className="mt-2 text-2xl font-semibold text-green-800">{uniqueUsers(data)}</div>
-          </div>
-          <div className="rounded-lg bg-white p-4 shadow">
-            <div className="text-sm font-medium text-green-600">Image uploads</div>
-            <div className="mt-2 text-2xl font-semibold text-green-800">{countEventType(data, "image_uploaded_and_processed")}</div>
-          </div>
-          </div>
+        )}
 
-         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-stretch">
-          <aside className="md:w-1/4">
-           <div className="rounded-lg bg-white p-4 shadow h-full flex flex-col">
-            <div className="text-sm font-medium text-green-600">Actions</div>
-            <div className="mt-2 text-lg font-semibold text-green-800">{mostCommonAction(data).action || "—"}</div>
-            <div className="text-sm text-green-600">{mostCommonAction(data).count} occurrences</div>
-              <div className="mt-3 flex flex-col gap-3 flex-1 overflow-auto">
-               <div>
-                 <div className="text-xs font-medium text-green-600">All actions</div>
-                 <div className="mt-2 flex flex-col gap-1 max-h-64 overflow-y-auto">
-                  {(function () {
-                    const list = allActions(data);
-                    if (!list.length) return <div className="text-sm text-green-500">—</div>;
-                    return list.map((a) => (
-                      <label
-                        key={a.action}
-                        className={
-                          "flex items-center justify-between rounded border px-3 py-1 text-left text-sm " +
-                          (selectedActions.has(a.action)
-                            ? "bg-green-100 border-green-200 text-green-800"
-                            : "bg-green-50 border-green-100 text-green-700 hover:bg-green-100")
-                        }
-                      >
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedActions.has(a.action)}
-                            onChange={() => toggleAction(a.action)}
-                            className="h-4 w-4"
-                          />
-                          <span className="truncate">{a.action}</span>
-                        </div>
-                        <span className="text-xs text-green-600 ml-3">{a.count}</span>
-                      </label>
-                    ));
-                  })()}
-                 </div>
-               </div>
-
-              <div className="mt-3">
-                <div className="text-xs font-medium text-green-600">Users</div>
-                <div className="mt-2 flex flex-col gap-1 max-h-64 overflow-y-auto">
-                  {(function () {
-                    const userList = allUsers(data);
-                    if (!userList.length) return <div className="text-sm text-green-500">—</div>;
-                    return userList.map((u) => (
-                      <label
-                        key={String(u.user_id)}
-                        className={
-                          "flex items-center justify-between rounded border px-3 py-1 text-left text-sm " +
-                          (selectedUsers.has(String(u.user_id))
-                            ? "bg-green-100 border-green-200 text-green-800"
-                            : "bg-green-50 border-green-100 text-green-700 hover:bg-green-100")
-                        }
-                      >
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedUsers.has(String(u.user_id))}
-                            onChange={() => toggleUser(String(u.user_id))}
-                            className="h-4 w-4"
-                          />
-                          <span className="truncate">{u.user_id}</span>
-                        </div>
-                        <span className="text-xs text-green-600 ml-3">{u.count}</span>
-                      </label>
-                    ));
-                  })()}
-                </div>
+        {/* Main Content */}
+        <div className="flex gap-6">
+          {/* Sidebar Filters */}
+          <aside className="w-72 shrink-0 space-y-4">
+            {/* Actions Filter */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+                <h3 className="font-semibold text-slate-700 text-sm">Filter by Action</h3>
               </div>
+              <div className="p-3 max-h-64 overflow-y-auto space-y-1.5">
+                {(function () {
+                  const list = allActions(data);
+                  if (!list.length) return <div className="text-sm text-slate-400 py-2 text-center">No actions</div>;
+                  return list.map((a) => (
+                    <label
+                      key={a.action}
+                      className={`flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-all ${
+                        selectedActions.has(a.action)
+                          ? "bg-emerald-50 border border-emerald-200"
+                          : "bg-slate-50 border border-transparent hover:bg-slate-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <input
+                          type="checkbox"
+                          checked={selectedActions.has(a.action)}
+                          onChange={() => toggleAction(a.action)}
+                          className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm text-slate-700 truncate max-w-[140px]">{a.action}</span>
+                      </div>
+                      <span className="text-xs font-medium text-slate-500 bg-white px-2 py-0.5 rounded-full">{a.count}</span>
+                    </label>
+                  ));
+                })()}
+              </div>
+              {selectedActions.size > 0 && (
+                <div className="px-3 py-2 border-t border-slate-100">
+                  <button
+                    onClick={() => setSelectedActions(new Set())}
+                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
+
+            {/* Users Filter */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+                <h3 className="font-semibold text-slate-700 text-sm">Filter by User</h3>
+              </div>
+              <div className="p-3 max-h-64 overflow-y-auto space-y-1.5">
+                {(function () {
+                  const userList = allUsers(data);
+                  if (!userList.length) return <div className="text-sm text-slate-400 py-2 text-center">No users</div>;
+                  return userList.map((u) => (
+                    <label
+                      key={String(u.user_id)}
+                      className={`flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-all ${
+                        selectedUsers.has(String(u.user_id))
+                          ? "bg-emerald-50 border border-emerald-200"
+                          : "bg-slate-50 border border-transparent hover:bg-slate-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.has(String(u.user_id))}
+                          onChange={() => toggleUser(String(u.user_id))}
+                          className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm font-mono text-slate-700">{u.user_id}</span>
+                      </div>
+                      <span className="text-xs font-medium text-slate-500 bg-white px-2 py-0.5 rounded-full">{u.count}</span>
+                    </label>
+                  ));
+                })()}
+              </div>
+              {selectedUsers.size > 0 && (
+                <div className="px-3 py-2 border-t border-slate-100">
+                  <button
+                    onClick={() => setSelectedUsers(new Set())}
+                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )}
+            </div>
           </aside>
 
-          <div className="flex-1">
-            <div className="rounded-lg bg-white shadow h-full flex flex-col">
-              <div className="overflow-x-auto flex-1">
-                <table className="w-full table-fixed border-collapse">
-                  <thead className="sticky top-0 z-10 bg-green-100">
+          {/* Events Table */}
+          <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 340px)" }}>
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+                  <tr>
+                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider w-20">ID</th>
+                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider w-28">User ID</th>
+                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Event Type</th>
+                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Event Data</th>
+                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider w-44">Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {loading ? (
                     <tr>
-                      <th className="w-16 px-4 py-3 text-left text-sm font-semibold text-green-800">ID</th>
-                      <th className="w-36 px-4 py-3 text-left text-sm font-semibold text-green-800">User ID</th>
-                      <th className="w-48 px-4 py-3 text-left text-sm font-semibold text-green-800">Event</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-green-800">Data</th>
-                      <th className="w-48 px-4 py-3 text-left text-sm font-semibold text-green-800">Timestamp</th>
+                      <td colSpan={5} className="px-5 py-12 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                          <svg className="animate-spin h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span className="text-sm text-slate-500">Loading events...</span>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan={5} className="py-12 text-center text-green-600">Loading…</td>
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-12 text-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                          <span className="text-sm text-slate-500">No events found</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    pageSlice(filtered, page, pageSize).map((row) => (
+                      <tr 
+                        key={row.id} 
+                        className="hover:bg-emerald-50/50 cursor-pointer transition-colors"
+                        onClick={() => setSelectedUser(row.user_id)}
+                      >
+                        <td className="px-5 py-4 text-sm font-mono text-slate-500">{row.id}</td>
+                        <td className="px-5 py-4">
+                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-mono font-medium text-slate-700">
+                            {row.user_id}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ${getEventBadgeColor(row.event_type)}`}>
+                            {row.event_type}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-sm text-slate-600 max-w-xs truncate">{row.event_data}</td>
+                        <td className="px-5 py-4 text-sm text-slate-500">{formatTimestamp(row.timestamp)}</td>
                       </tr>
-                    ) : filtered.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="py-8 text-center text-green-600">No records found</td>
-                      </tr>
-                    ) : (
-                      pageSlice(filtered, page, pageSize).map((row) => (
-                        <tr key={row.id} className="even:bg-white odd:bg-green-50">
-                          <td className="px-4 py-4 text-sm text-green-700">{row.id}</td>
-                          <td className="px-4 py-4 text-sm text-green-700">{row.user_id}</td>
-                          <td className="px-4 py-4 text-sm text-green-700">{row.event_type}</td>
-                          <td className="px-4 py-4 text-sm text-green-700">{row.event_data}</td>
-                          <td className="px-4 py-4 text-sm text-green-700">{formatTimestamp(row.timestamp)}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-              <div className="flex items-center justify-between border-t px-4 py-3">
-                <div className="text-sm text-green-600">
-                  Showing {Math.min((page - 1) * pageSize + 1, filtered.length)}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    className="rounded border border-green-300 px-3 py-1 text-sm text-green-700 disabled:opacity-50"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                  >
-                    Prev
-                  </button>
-                  <div className="text-sm text-green-700">Page {page} / {Math.max(1, Math.ceil(filtered.length / pageSize))}</div>
-                  <button
-                    className="rounded border border-green-300 px-3 py-1 text-sm text-green-700 disabled:opacity-50"
-                    onClick={() => setPage((p) => Math.min(Math.ceil(filtered.length / pageSize), p + 1))}
-                    disabled={page >= Math.ceil(filtered.length / pageSize)}
-                  >
-                    Next
-                  </button>
-                </div>
+            {/* Pagination */}
+            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-5 py-3">
+              <p className="text-sm text-slate-600">
+                Showing <span className="font-medium">{Math.min((page - 1) * pageSize + 1, filtered.length)}</span> to <span className="font-medium">{Math.min(page * pageSize, filtered.length)}</span> of <span className="font-medium">{filtered.length}</span> events
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Previous
+                </button>
+                <span className="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg">
+                  {page} / {Math.max(1, Math.ceil(filtered.length / pageSize))}
+                </span>
+                <button
+                  disabled={page >= Math.ceil(filtered.length / pageSize)}
+                  onClick={() => setPage((p) => Math.min(Math.ceil(filtered.length / pageSize), p + 1))}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
         </div>
-        {error ? <div className="mt-4 rounded bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
+      </div>
 
+      {/* User Details Modal */}
       {selectedUser ? (
-          <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-6">
-            <div className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-lg">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-green-800">Actions for user {selectedUser}</h3>
-                  <p className="text-sm text-green-600">Showing recent actions for this user</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      const rows = userActions(data, selectedUser);
-                      const csv = ["id,user_id,event_type,event_data,timestamp"]
-                        .concat(rows.map((r) => `${r.id},${r.user_id},"${String(r.event_type).replace(/"/g, '""')}","${String(r.event_data).replace(/"/g, '""')}",${JSON.stringify(r.timestamp)}`))
-                        .join("\n");
-                      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `user-${selectedUser}-actions.csv`;
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
-                      URL.revokeObjectURL(url);
-                    }}
-                    className="rounded border border-green-600 bg-white px-3 py-1 text-sm text-green-700 hover:bg-green-50"
-                  >
-                    Export CSV
-                  </button>
-                  <button
-                    onClick={() => setSelectedUser(null)}
-                    className="rounded border border-red-300 bg-white px-3 py-1 text-sm text-red-700 hover:bg-red-50"
-                  >
-                    Close
-                  </button>
-                </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onClick={() => setSelectedUser(null)}>
+          <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-800">User Activity</h3>
+                <p className="text-sm text-slate-500">Actions for user <span className="font-mono font-medium">{selectedUser}</span></p>
               </div>
-              <div className="overflow-y-auto max-h-[60vh]">
-                <table className="w-full table-fixed">
-                  <thead>
-                    <tr className="bg-green-50">
-                      <th className="w-20 px-3 py-2 text-left text-xs text-green-700">ID</th>
-                      <th className="px-3 py-2 text-left text-xs text-green-700">Event</th>
-                      <th className="px-3 py-2 text-left text-xs text-green-700">Data</th>
-                      <th className="w-48 px-3 py-2 text-left text-xs text-green-700">Timestamp</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {userActions(data, selectedUser).map((r) => (
-                      <tr key={r.id} className="even:bg-white odd:bg-green-50">
-                        <td className="px-3 py-3 text-sm text-green-700">{r.id}</td>
-                        <td className="px-3 py-3 text-sm text-green-700">{r.event_type}</td>
-                        <td className="px-3 py-3 text-sm text-green-700">{r.event_data}</td>
-                        <td className="px-3 py-3 text-sm text-green-700">{formatTimestamp(r.timestamp)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const rows = userActions(data, selectedUser);
+                    const csv = ["id,user_id,event_type,event_data,timestamp"]
+                      .concat(rows.map((r) => `${r.id},${r.user_id},"${String(r.event_type).replace(/"/g, '""')}","${String(r.event_data).replace(/"/g, '""')}",${JSON.stringify(r.timestamp)}`))
+                      .join("\n");
+                    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `user-${selectedUser}-actions.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export
+                </button>
+                <button
+                  onClick={() => setSelectedUser(null)}
+                  className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
             </div>
+            <div className="overflow-y-auto max-h-[60vh]">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+                  <tr>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider w-20">ID</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Event Type</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Event Data</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider w-44">Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {userActions(data, selectedUser).map((r) => (
+                    <tr key={r.id} className="hover:bg-slate-50">
+                      <td className="px-5 py-3 text-sm font-mono text-slate-500">{r.id}</td>
+                      <td className="px-5 py-3">
+                        <span className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ${getEventBadgeColor(r.event_type)}`}>
+                          {r.event_type}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-sm text-slate-600">{r.event_data}</td>
+                      <td className="px-5 py-3 text-sm text-slate-500">{formatTimestamp(r.timestamp)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
+        </div>
       ) : null}
-      </div>
     </div>
   );
 }

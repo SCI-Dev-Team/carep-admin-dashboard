@@ -79,212 +79,311 @@ export default function ImageManagement({ onClose }: { onClose: () => void }) {
   }
 
   function getImageUrl(imageFile: string): string {
-    // Use the API endpoint to serve images from the filesystem
     return `/api/images/serve?path=${encodeURIComponent(imageFile)}`;
   }
 
+  const labeledCount = items.filter((i) => i.label === 1).length;
+  const unlabeledCount = items.filter((i) => i.label === 0).length;
+  const missingCount = items.filter((i) => !i.image_exists).length;
+
   return (
-    <div className="h-full w-full bg-white shadow-lg">
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <div>
-          <h3 className="text-lg font-semibold text-green-800">Image Management</h3>
-          <p className="text-xs text-green-600">Manage and label user uploaded images</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => fetchList()} className="rounded border px-2 py-1 text-sm text-green-700">
-            Refresh
-          </button>
-          <button onClick={onClose} className="rounded border px-2 py-1 text-sm text-red-700">
-            Close
-          </button>
-        </div>
-      </div>
-
-      <div className="border-b px-4 py-2 flex items-center gap-4">
-        <label className="text-sm text-green-700">Filter:</label>
-        <select
-          value={filterLabel}
-          onChange={(e) => {
-            setFilterLabel(e.target.value);
-            setPage(0);
-          }}
-          className="rounded border px-2 py-1 text-sm"
-        >
-          <option value="all">All Images</option>
-          <option value="0">Unlabeled</option>
-          <option value="1">Labeled/Correct</option>
-        </select>
-        
-        <div className="flex items-center gap-2 ml-auto">
-          <button
-            onClick={() => setPage(Math.max(0, page - 1))}
-            disabled={page === 0}
-            className="rounded border px-2 py-1 text-sm text-green-700 disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span className="text-sm text-green-700">Page {page + 1}</span>
-          <button
-            onClick={() => setPage(page + 1)}
-            disabled={items.length < pageSize}
-            className="rounded border px-2 py-1 text-sm text-green-700 disabled:opacity-50"
-          >
-            Next
-          </button>
+    <div className="h-full w-full bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">Image Management</h1>
+              <p className="text-sm text-slate-500 mt-0.5">Review and label uploaded images</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => fetchList()} 
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-400"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </button>
+            <button 
+              onClick={onClose} 
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-300 hover:text-red-600"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Close
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="p-3">
-        {error ? <div className="mb-2 text-sm text-red-600">{error}</div> : null}
+      <div className="p-6 space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-4 gap-5">
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">This Page</p>
+                <p className="text-3xl font-bold text-slate-800">{items.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Labeled</p>
+                <p className="text-3xl font-bold text-emerald-600">{labeledCount}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Unlabeled</p>
+                <p className="text-3xl font-bold text-amber-600">{unlabeledCount}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Missing</p>
+                <p className="text-3xl font-bold text-red-600">{missingCount}</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {loading ? (
-          <div className="text-sm text-green-600">Loading…</div>
-        ) : (
-          <div className="max-h-[70vh] overflow-auto">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-white">
-                <tr className="text-left text-xs text-green-700 border-b">
-                  <th className="p-2">ID</th>
-                  <th className="p-2">Preview</th>
-                  <th className="p-2">User ID</th>
-                  <th className="p-2">Disease</th>
-                  <th className="p-2">Confidence</th>
-                  <th className="p-2">Date</th>
-                  <th className="p-2">Labeled</th>
-                  <th className="p-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((it) => (
-                  <tr key={it.id} className="even:bg-green-50 border-b hover:bg-green-100">
-                    <td className="p-2">{it.id}</td>
-                    <td className="p-2">
-                      <div className="flex flex-col gap-1">
-                        {it.image_exists ? (
-                          <>
-                            <div 
-                              onClick={() => setSelectedImage(it.image_file)}
-                              className="cursor-pointer border-2 border-gray-300 rounded overflow-hidden hover:border-green-500 transition-colors"
-                              style={{ width: '100px', height: '100px' }}
-                            >
-                              <img
-                                src={getImageUrl(it.image_file)}
-                                alt={`Upload ${it.id}`}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ENo Image%3C/text%3E%3C/svg%3E';
-                                }}
-                              />
-                            </div>
-                            <button
-                              onClick={() => setSelectedImage(it.image_file)}
-                              className="text-blue-600 hover:underline text-xs"
-                            >
-                              View Full
-                            </button>
-                          </>
-                        ) : (
-                          <div className="w-[100px] h-[100px] bg-gray-200 rounded flex items-center justify-center">
-                            <span className="text-red-600 text-xs text-center">Image Missing</span>
-                          </div>
-                        )}
-                        <div className="text-xs text-gray-500 max-w-[100px] truncate" title={it.image_file}>
-                          {it.image_file.split('/').pop()}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      <div className="text-xs">
-                        <div className="font-semibold">{it.user_id}</div>
-                        {it.image_exists ? (
-                          <span className="inline-block px-2 py-0.5 rounded text-xs bg-green-100 text-green-800 mt-1">
-                            ✓ Exists
-                          </span>
-                        ) : (
-                          <span className="inline-block px-2 py-0.5 rounded text-xs bg-red-100 text-red-800 mt-1">
-                            ✗ Missing
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      <div className="text-xs">
-                        <div className="font-semibold">{it.disease_code || "N/A"}</div>
-                        {it.disease_name && it.disease_name !== it.disease_code && (
-                          <div className="text-green-600 mt-0.5">{it.disease_name}</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      {it.confidence ? (
-                        <span className="text-xs font-semibold">{it.confidence.toFixed(2)}%</span>
-                      ) : (
-                        "N/A"
-                      )}
-                    </td>
-                    <td className="p-2">
-                      <div className="text-xs">
-                        {it.created_at ? (
-                          <>
-                            <div>{new Date(it.created_at).toLocaleDateString()}</div>
-                            <div className="text-gray-500">{new Date(it.created_at).toLocaleTimeString()}</div>
-                          </>
-                        ) : "N/A"}
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={it.label === 1}
-                          onChange={() => toggleLabel(it.id, it.label)}
-                          className="w-4 h-4 cursor-pointer"
+        {/* Filters */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-slate-600">Filter:</label>
+                <select
+                  value={filterLabel}
+                  onChange={(e) => { setFilterLabel(e.target.value); setPage(0); }}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+                >
+                  <option value="all">All Images</option>
+                  <option value="0">Unlabeled Only</option>
+                  <option value="1">Labeled/Correct</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(Math.max(0, page - 1))}
+                disabled={page === 0}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Previous
+              </button>
+              <span className="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg">
+                Page {page + 1}
+              </span>
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={items.length < pageSize}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            {error}
+          </div>
+        )}
+
+        {/* Image Grid */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
+            <h3 className="font-semibold text-slate-700">Uploaded Images</h3>
+          </div>
+          <div className="p-5">
+            {loading ? (
+              <div className="flex flex-col items-center py-12 gap-3">
+                <svg className="animate-spin h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="text-sm text-slate-500">Loading images...</span>
+              </div>
+            ) : items.length === 0 ? (
+              <div className="flex flex-col items-center py-12 gap-2">
+                <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="text-sm text-slate-500">No images found</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {items.map((item) => (
+                  <div 
+                    key={item.id} 
+                    className="group relative bg-gradient-to-br from-slate-50 to-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-slate-300 transition-all"
+                  >
+                    {/* Image Preview */}
+                    <div 
+                      className="aspect-square bg-slate-100 cursor-pointer relative overflow-hidden"
+                      onClick={() => item.image_exists && setSelectedImage(item.image_file)}
+                    >
+                      {item.image_exists ? (
+                        <img
+                          src={getImageUrl(item.image_file)}
+                          alt={`Upload ${item.id}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23f1f5f9" width="100" height="100"/%3E%3Ctext fill="%2394a3b8" x="50%25" y="50%25" text-anchor="middle" dy=".3em" font-size="12"%3EError%3C/text%3E%3C/svg%3E';
+                          }}
                         />
-                        <span className="text-xs">{it.label === 1 ? "✓ Correct" : "Unlabeled"}</span>
-                      </label>
-                    </td>
-                    <td className="p-2">
-                      <button
-                        onClick={() => remove(it.id)}
-                        className="rounded border px-2 py-1 text-xs text-red-700 hover:bg-red-50"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-red-500">
+                          <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          <span className="text-xs mt-1">Missing</span>
+                        </div>
+                      )}
+                      {/* Label Badge Overlay */}
+                      <div className="absolute top-2 left-2">
+                        {item.label === 1 ? (
+                          <span className="inline-flex items-center rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-medium text-white shadow-sm">
+                            ✓ Labeled
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-amber-500 px-2 py-0.5 text-xs font-medium text-white shadow-sm">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+                      {/* View Full Button */}
+                      {item.image_exists && (
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="text-white text-sm font-medium bg-black/50 px-3 py-1.5 rounded-lg">
+                            View Full
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card Info */}
+                    <div className="p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs text-slate-500">#{item.id}</span>
+                        <span className="text-xs text-slate-400">User {item.user_id}</span>
+                      </div>
+                      
+                      {item.disease_code && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center rounded-md bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                            {item.disease_code}
+                          </span>
+                          {item.confidence && (
+                            <span className="text-xs text-slate-400">{item.confidence.toFixed(1)}%</span>
+                          )}
+                        </div>
+                      )}
+
+                      {item.created_at && (
+                        <div className="text-xs text-slate-400">
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+                        <label className="flex-1 inline-flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={item.label === 1}
+                            onChange={() => toggleLabel(item.id, item.label)}
+                            className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                          />
+                          <span className="text-xs text-slate-600">Labeled</span>
+                        </label>
+                        <button
+                          onClick={() => remove(item.id)}
+                          className="inline-flex items-center justify-center rounded-lg p-1.5 text-slate-400 hover:bg-red-100 hover:text-red-600 transition-all"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-            
-            {items.length === 0 && !loading && (
-              <div className="text-center py-8 text-sm text-green-600">
-                No images found
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
 
+      {/* Image Preview Modal */}
       {selectedImage && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedImage(null)}
         >
-          <div className="relative max-w-4xl max-h-[90vh] p-4">
+          <div className="relative max-w-5xl w-full">
             <button
               onClick={() => setSelectedImage(null)}
-              className="absolute top-2 right-2 bg-white rounded-full w-8 h-8 flex items-center justify-center text-xl font-bold hover:bg-gray-200"
+              className="absolute -top-12 right-0 text-white/80 hover:text-white transition-colors"
             >
-              ×
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
             <img
               src={getImageUrl(selectedImage)}
-              alt="Upload preview"
-              className="max-w-full max-h-[85vh] object-contain"
+              alt="Preview"
+              className="w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             />
-            <div className="mt-2 text-white text-sm text-center bg-black bg-opacity-50 p-2 rounded">
-              {selectedImage}
+            <div className="mt-3 text-white/70 text-sm text-center font-mono bg-black/50 py-2 px-4 rounded-lg inline-block">
+              {selectedImage.split('/').pop()}
             </div>
           </div>
         </div>

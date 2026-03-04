@@ -33,31 +33,32 @@ function requiresAuth(request: Request) {
   return user !== ADMIN_USER || pass !== ADMIN_PASS;
 }
 
-function validateImageFile(imageFile: string, projectBasePath: string): boolean {
-  if (!imageFile) return false;
-  
-  // The database stores relative paths like "uploads/2026/02/18/file.jpg"
-  // We need to construct the full absolute path
-  // projectBasePath is like "/Users/thun/Desktop/Project/sci-project/cucumber-tele-bot"
-  
-  let fullPath: string;
-  
-  if (imageFile.startsWith('uploads/')) {
-    // Remove 'uploads/' prefix and append to base path
-    const relativePath = imageFile.substring('uploads/'.length);
-    fullPath = path.join(projectBasePath, 'uploads', relativePath);
-  } else if (imageFile.startsWith('/')) {
-    // Already an absolute path
-    fullPath = imageFile;
-  } else {
-    // Assume it's relative to uploads directory
-    fullPath = path.join(projectBasePath, 'uploads', imageFile);
+/** Get path relative to uploads dir from any format (uploads/..., /app/uploads/..., or 2026/02/25/file.jpg). */
+function getRelativeImagePath(imageFile: string): string | null {
+  if (!imageFile || typeof imageFile !== "string") return null;
+  const trimmed = imageFile.trim();
+  if (!trimmed) return null;
+  // Already relative: "uploads/2026/02/25/file.jpg" or "2026/02/25/file.jpg"
+  if (trimmed.includes("uploads/")) {
+    const after = trimmed.split("uploads/")[1];
+    return after ? after.replace(/^\/+/, "") : null;
   }
-  
+  if (trimmed.startsWith("/")) {
+    const parts = trimmed.split("/").filter(Boolean);
+    const idx = parts.indexOf("uploads");
+    return idx >= 0 ? parts.slice(idx + 1).join("/") : parts.join("/");
+  }
+  return trimmed;
+}
+
+function validateImageFile(imageFile: string, projectBasePath: string): boolean {
+  const relativePath = getRelativeImagePath(imageFile);
+  if (!relativePath) return false;
+  const fullPath = path.join(projectBasePath, "uploads", relativePath);
   try {
     return fs.existsSync(fullPath) && fs.statSync(fullPath).isFile();
   } catch (err) {
-    console.error("Error validating image file:", imageFile, err);
+    console.error("Error validating image file:", imageFile, "resolved:", fullPath, err);
     return false;
   }
 }

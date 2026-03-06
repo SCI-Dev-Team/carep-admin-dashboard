@@ -12,6 +12,9 @@ services:
       - HOSTNAME=0.0.0.0
     env_file:
       - .env
+    volumes:
+      - /home/rileywalker1303591858/cucumber-tele-bot/uploads:/home/rileywalker1303591858/cucumber-tele-bot/uploads:ro
+      - /home/rileywalker1303591858/cucumber-tele-bot/uploads:/app/uploads:ro
     restart: unless-stopped
     networks:
       - cucumber-tele-bot_default  # Connect to existing network

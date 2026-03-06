@@ -11,11 +11,50 @@ async function withPool<T>(fn: (pool: any) => Promise<T>) {
     database: process.env.DB_NAME ?? "",
     waitForConnections: true,
     connectionLimit: 5,
+    connectTimeout: 10000,
+    acquireTimeout: 10000,
   });
   try {
     return await fn(pool);
   } finally {
     await pool.end();
+  }
+}
+
+// Get chat info (name) from Telegram with timeout
+async function getChatInfo(chatId: string | number): Promise<{ first_name?: string; last_name?: string; username?: string } | null> {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  
+  if (!botToken) return null;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
+    const response = await fetch(
+      `https://api.telegram.org/bot${botToken}/getChat`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId }),
+        signal: controller.signal,
+      }
+    );
+
+    clearTimeout(timeoutId);
+    const result = await response.json();
+    
+    if (result.ok) {
+      return {
+        first_name: result.result.first_name,
+        last_name: result.result.last_name,
+        username: result.result.username,
+      };
+    }
+    return null;
+  } catch (error) {
+    // Silently fail - name is optional
+    return null;
   }
 }
 
@@ -99,7 +138,21 @@ export async function GET(request: Request) {
         return rows;
       });
 
-      return NextResponse.json({ farmers });
+      // Fetch Telegram names for each farmer
+      const farmersWithNames = await Promise.all(
+        (farmers as any[]).map(async (farmer) => {
+          const chatId = farmer.telegram_chat_id || farmer.user_id.toString();
+          const chatInfo = await getChatInfo(chatId);
+          return {
+            ...farmer,
+            telegram_name: chatInfo
+              ? [chatInfo.first_name, chatInfo.last_name].filter(Boolean).join(" ") || chatInfo.username
+              : null,
+          };
+        })
+      );
+
+      return NextResponse.json({ farmers: farmersWithNames });
     }
 
     if (action === "get_all_users") {
@@ -120,7 +173,21 @@ export async function GET(request: Request) {
         return rows;
       });
 
-      return NextResponse.json({ users });
+      // Fetch Telegram names for each user
+      const usersWithNames = await Promise.all(
+        (users as any[]).map(async (user) => {
+          const chatId = user.telegram_chat_id || user.user_id.toString();
+          const chatInfo = await getChatInfo(chatId);
+          return {
+            ...user,
+            telegram_name: chatInfo
+              ? [chatInfo.first_name, chatInfo.last_name].filter(Boolean).join(" ") || chatInfo.username
+              : null,
+          };
+        })
+      );
+
+      return NextResponse.json({ users: usersWithNames });
     }
 
     if (action === "get_history") {

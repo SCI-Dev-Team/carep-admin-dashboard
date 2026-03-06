@@ -9,6 +9,7 @@ type FarmerLead = {
   location?: string;
   created_at?: string;
   telegram_chat_id?: string;
+  telegram_name?: string;
 };
 
 type User = {
@@ -19,6 +20,7 @@ type User = {
   role?: string;
   created_at?: string;
   telegram_chat_id?: string;
+  telegram_name?: string;
 };
 
 type NotificationHistory = {
@@ -97,10 +99,12 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
 
 export default function NotificationManagement({ onClose }: { onClose: () => void }) {
   const [farmerLeads, setFarmerLeads] = useState<FarmerLead[]>([]);
+  const [allUsersList, setAllUsersList] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
   const [message, setMessage] = useState("");
   const [subject, setSubject] = useState("");
   const [loading, setLoading] = useState(false);
+  const [allUsersListLoading, setAllUsersListLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -113,6 +117,7 @@ export default function NotificationManagement({ onClose }: { onClose: () => voi
   const [includePriceForm, setIncludePriceForm] = useState(true);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("custom");
   const [activeTab, setActiveTab] = useState<"notifications" | "history" | "responses">("notifications");
+  const [userSelectionTab, setUserSelectionTab] = useState<"farmer_leads" | "all_users">("farmer_leads");
   const [historyPage, setHistoryPage] = useState(1);
   const [historyTotal, setHistoryTotal] = useState(0);
   const HISTORY_PAGE_SIZE = 20;
@@ -524,16 +529,40 @@ export default function NotificationManagement({ onClose }: { onClose: () => voi
       newSet.add(userId);
     }
     setSelectedUsers(newSet);
-    setSelectAll(newSet.size === farmerLeads.length);
+    const currentList = userSelectionTab === "farmer_leads" ? farmerLeads : allUsersList;
+    setSelectAll(newSet.size === currentList.length);
   }
 
   function handleSelectAll() {
+    const currentList = userSelectionTab === "farmer_leads" ? farmerLeads : allUsersList;
     if (selectAll) {
       setSelectedUsers(new Set());
       setSelectAll(false);
     } else {
-      setSelectedUsers(new Set(farmerLeads.map((f) => f.user_id)));
+      setSelectedUsers(new Set(currentList.map((u) => u.user_id)));
       setSelectAll(true);
+    }
+  }
+
+  function handleUserSelectionTabChange(tab: "farmer_leads" | "all_users") {
+    setUserSelectionTab(tab);
+    setSelectedUsers(new Set());
+    setSelectAll(false);
+    if (tab === "all_users" && allUsersList.length === 0) {
+      fetchAllUsersList();
+    }
+  }
+
+  async function fetchAllUsersList() {
+    setAllUsersListLoading(true);
+    try {
+      const res = await fetch("/api/notifications?action=get_all_users");
+      const json = await res.json();
+      setAllUsersList(json.users || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAllUsersListLoading(false);
     }
   }
 
@@ -668,17 +697,40 @@ export default function NotificationManagement({ onClose }: { onClose: () => voi
         {activeTab === "notifications" && (
           <>
             <div className="grid grid-cols-2 gap-6">
-              {/* Farmer Leads Selection */}
+              {/* User Selection */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
             <div className="px-5 py-4 border-b border-slate-200">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-800">Farmer Leads</h2>
+                  <h2 className="text-lg font-semibold text-slate-800">Recipients</h2>
                   <p className="text-sm text-slate-500">Select recipients for your notification</p>
                 </div>
                 <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-full">
-                  {farmerLeads.length} total
+                  {userSelectionTab === "farmer_leads" ? farmerLeads.length : allUsersList.length} total
                 </span>
+              </div>
+              {/* Tabs */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleUserSelectionTabChange("farmer_leads")}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                    userSelectionTab === "farmer_leads"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  Farmer Leads
+                </button>
+                <button
+                  onClick={() => handleUserSelectionTabChange("all_users")}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                    userSelectionTab === "all_users"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  All Users
+                </button>
               </div>
             </div>
 
@@ -697,41 +749,54 @@ export default function NotificationManagement({ onClose }: { onClose: () => voi
                 </label>
               </div>
 
-              {/* Farmer List */}
+              {/* User List */}
               <div className="max-h-80 overflow-y-auto space-y-2">
-                {loading ? (
+                {(userSelectionTab === "farmer_leads" ? loading : allUsersListLoading) ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
                   </div>
-                ) : farmerLeads.length === 0 ? (
+                ) : (userSelectionTab === "farmer_leads" ? farmerLeads : allUsersList).length === 0 ? (
                   <div className="text-center py-8 text-slate-500">
-                    No farmer leads found
+                    {userSelectionTab === "farmer_leads" ? "No farmer leads found" : "No users found"}
                   </div>
                 ) : (
-                  farmerLeads.map((farmer) => (
+                  (userSelectionTab === "farmer_leads" ? farmerLeads : allUsersList).map((user) => (
                     <div
-                      key={farmer.user_id}
+                      key={user.user_id}
                       className={`flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer ${
-                        selectedUsers.has(farmer.user_id)
+                        selectedUsers.has(user.user_id)
                           ? "border-emerald-300 bg-emerald-50"
                           : "border-slate-200 bg-slate-50 hover:border-slate-300"
                       }`}
-                      onClick={() => handleSelectUser(farmer.user_id)}
+                      onClick={() => handleSelectUser(user.user_id)}
                     >
                       <input
                         type="checkbox"
-                        checked={selectedUsers.has(farmer.user_id)}
-                        onChange={() => handleSelectUser(farmer.user_id)}
+                        checked={selectedUsers.has(user.user_id)}
+                        onChange={() => handleSelectUser(user.user_id)}
                         onClick={(e) => e.stopPropagation()}
                         className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                       />
-                      <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {farmer.user_id.toString().slice(0, 2)}
+                      <div className={`flex-shrink-0 w-10 h-10 bg-gradient-to-br ${userSelectionTab === "farmer_leads" ? "from-emerald-400 to-emerald-600" : "from-blue-400 to-blue-600"} rounded-full flex items-center justify-center text-white font-semibold`}>
+                        {user.telegram_name ? user.telegram_name.slice(0, 2).toUpperCase() : user.user_id.toString().slice(0, 2)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-800">User #{farmer.user_id}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-slate-800">
+                            {user.telegram_name || `User #${user.user_id}`}
+                          </p>
+                          {userSelectionTab === "all_users" && (user as User).role && (
+                            <span className={`text-xs px-1.5 py-0.5 rounded ${
+                              (user as User).role === 'farmer_lead' 
+                                ? 'bg-emerald-100 text-emerald-700' 
+                                : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {(user as User).role === 'farmer_lead' ? 'Lead' : (user as User).role}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-500 truncate">
-                          {farmer.location || "Unknown location"} | {farmer.gender || "N/A"} | {farmer.age_range || "N/A"}
+                          {user.location || "Unknown location"} | {user.gender || "N/A"} | {user.age_range || "N/A"}
                         </p>
                       </div>
                       <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full flex items-center gap-1">
@@ -1584,7 +1649,9 @@ export default function NotificationManagement({ onClose }: { onClose: () => voi
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-medium text-sm text-slate-700">User #{user.user_id}</span>
+                                  <span className="font-medium text-sm text-slate-700">
+                                    {user.telegram_name || `User #${user.user_id}`}
+                                  </span>
                                   {user.role && (
                                     <span className={`text-xs px-1.5 py-0.5 rounded ${
                                       user.role === 'farmer_lead' 

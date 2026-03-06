@@ -11,6 +11,7 @@ type User = {
   role: string;
   total_uploads?: number;
   best_streak?: number;
+  telegram_name?: string;
 };
 
 type UserStats = {
@@ -286,6 +287,7 @@ export default function UserManagement({ onClose }: { onClose: () => void }) {
               <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
                 <tr>
                   <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">User ID</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Name</th>
                   <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Gender</th>
                   <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Age Range</th>
                   <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Location</th>
@@ -298,7 +300,7 @@ export default function UserManagement({ onClose }: { onClose: () => void }) {
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-12 text-center">
+                    <td colSpan={9} className="px-5 py-12 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <svg className="animate-spin h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -310,7 +312,7 @@ export default function UserManagement({ onClose }: { onClose: () => void }) {
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-12 text-center">
+                    <td colSpan={9} className="px-5 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -328,6 +330,9 @@ export default function UserManagement({ onClose }: { onClose: () => void }) {
                     >
                       <td className="px-5 py-4">
                         <span className="font-mono text-sm font-medium text-slate-800">{user.user_id}</span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="text-sm font-medium text-slate-800">{user.telegram_name || "-"}</span>
                       </td>
                       <td className="px-5 py-4 text-sm text-slate-600">{user.gender || "-"}</td>
                       <td className="px-5 py-4 text-sm text-slate-600">{user.age_range || "-"}</td>

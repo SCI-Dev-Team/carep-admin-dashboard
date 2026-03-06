@@ -8,6 +8,7 @@ type TopUser = {
   best_streak: number;
   gender?: string;
   location?: string;
+  telegram_name?: string;
 };
 
 type PriceContributor = {
@@ -181,7 +182,7 @@ export default function TopContributors({ onClose }: { onClose: () => void }) {
                       </div>
                       <div className="mt-4 bg-gradient-to-t from-slate-200 to-slate-100 rounded-t-lg px-6 py-4 text-center min-w-[120px]" style={{ height: "100px" }}>
                         <p className="font-semibold text-slate-700 text-sm truncate max-w-[100px]">
-                          {String(top3[1].user_id).slice(0, 10)}...
+                          {top3[1].telegram_name || `User ${String(top3[1].user_id).slice(0, 8)}...`}
                         </p>
                         <p className="text-2xl font-bold text-slate-600 mt-1">{top3[1].total_uploads}</p>
                         <p className="text-xs text-slate-400">uploads</p>
@@ -203,7 +204,7 @@ export default function TopContributors({ onClose }: { onClose: () => void }) {
                       </div>
                       <div className="mt-4 bg-gradient-to-t from-amber-200 to-amber-100 rounded-t-lg px-8 py-4 text-center min-w-[140px]" style={{ height: "140px" }}>
                         <p className="font-bold text-amber-800 truncate max-w-[120px]">
-                          {String(top3[0].user_id).slice(0, 10)}...
+                          {top3[0].telegram_name || `User ${String(top3[0].user_id).slice(0, 8)}...`}
                         </p>
                         <p className="text-3xl font-bold text-amber-600 mt-2">{top3[0].total_uploads}</p>
                         <p className="text-xs text-amber-500">uploads</p>
@@ -227,7 +228,7 @@ export default function TopContributors({ onClose }: { onClose: () => void }) {
                       </div>
                       <div className="mt-4 bg-gradient-to-t from-orange-200 to-orange-100 rounded-t-lg px-6 py-4 text-center min-w-[120px]" style={{ height: "80px" }}>
                         <p className="font-semibold text-orange-700 text-sm truncate max-w-[100px]">
-                          {String(top3[2].user_id).slice(0, 10)}...
+                          {top3[2].telegram_name || `User ${String(top3[2].user_id).slice(0, 8)}...`}
                         </p>
                         <p className="text-2xl font-bold text-orange-600 mt-1">{top3[2].total_uploads}</p>
                         <p className="text-xs text-orange-400">uploads</p>
@@ -257,7 +258,7 @@ export default function TopContributors({ onClose }: { onClose: () => void }) {
                         {user.gender === "male" ? "👨" : user.gender === "female" ? "👩" : "🧑"}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-700 truncate">{user.user_id}</p>
+                        <p className="font-medium text-slate-700 truncate">{user.telegram_name || `User ${user.user_id}`}</p>
                         {user.location && (
                           <p className="text-sm text-slate-400 flex items-center gap-1">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

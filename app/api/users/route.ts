@@ -11,11 +11,49 @@ async function withPool<T>(fn: (pool: any) => Promise<T>) {
     database: process.env.DB_NAME ?? "",
     waitForConnections: true,
     connectionLimit: 5,
+    connectTimeout: 10000,
+    acquireTimeout: 10000,
   });
   try {
     return await fn(pool);
   } finally {
     await pool.end();
+  }
+}
+
+// Get chat info (name) from Telegram with timeout
+async function getChatInfo(chatId: string | number): Promise<{ first_name?: string; last_name?: string; username?: string } | null> {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  
+  if (!botToken) return null;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch(
+      `https://api.telegram.org/bot${botToken}/getChat`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId }),
+        signal: controller.signal,
+      }
+    );
+
+    clearTimeout(timeoutId);
+    const result = await response.json();
+    
+    if (result.ok) {
+      return {
+        first_name: result.result.first_name,
+        last_name: result.result.last_name,
+        username: result.result.username,
+      };
+    }
+    return null;
+  } catch (error) {
+    return null;
   }
 }
 
@@ -72,6 +110,7 @@ export async function GET(request: Request) {
           u.location,
           u.created_at,
           u.role,
+          u.telegram_chat_id,
           COALESCE(us.images_uploaded, 0) as total_uploads,
           COALESCE(us.streak_best, 0) as best_streak
         FROM users u
@@ -81,8 +120,8 @@ export async function GET(request: Request) {
       const params: any[] = [];
 
       if (search) {
-        query += ` AND u.user_id LIKE ?`;
-        params.push(`%${search}%`);
+        query += ` AND (u.user_id LIKE ? OR u.location LIKE ?)`;
+        params.push(`%${search}%`, `%${search}%`);
       }
 
       if (role && role !== "all") {
@@ -97,7 +136,21 @@ export async function GET(request: Request) {
       return r;
     });
 
-    return NextResponse.json(rows);
+    // Fetch Telegram names for each user
+    const usersWithNames = await Promise.all(
+      (rows as any[]).map(async (user) => {
+        const chatId = user.telegram_chat_id || user.user_id.toString();
+        const chatInfo = await getChatInfo(chatId);
+        return {
+          ...user,
+          telegram_name: chatInfo
+            ? [chatInfo.first_name, chatInfo.last_name].filter(Boolean).join(" ") || chatInfo.username
+            : null,
+        };
+      })
+    );
+
+    return NextResponse.json(usersWithNames);
   } catch (err) {
     console.error("users GET error", err);
     return new Response("DB error", { status: 500 });

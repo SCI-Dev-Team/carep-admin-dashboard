@@ -1,17 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
-import AnalyticsDashboard from "./AnalyticsDashboard";
-import CauliCrud from "./CauliCrud";
-// @ts-ignore - badge CRUD component is added in this workspace
-import BadgeCrud from "./BadgeCrud";
-import ImageManagement from "./ImageManagement";
-import UserManagement from "./UserManagement";
-import TopContributors from "./TopContributors";
-import NotificationManagement from "./NotificationManagement";
-import WeatherDashboard from "./WeatherDashboard";
-import WeatherAlerts from "./WeatherAlerts";
+import dynamic from "next/dynamic";
 import { AuthProvider } from "./AuthContext";
+
+const AnalyticsDashboard = dynamic(() => import("./AnalyticsDashboard"), { ssr: false });
+const CauliCrud = dynamic(() => import("./CauliCrud"), { ssr: false });
+const BadgeCrud = dynamic(() => import("./BadgeCrud"), { ssr: false });
+const ImageManagement = dynamic(() => import("./ImageManagement"), { ssr: false });
+const UserManagement = dynamic(() => import("./UserManagement"), { ssr: false });
+const TopContributors = dynamic(() => import("./TopContributors"), { ssr: false });
+const NotificationManagement = dynamic(() => import("./NotificationManagement"), { ssr: false });
+const WeatherDashboard = dynamic(() => import("./WeatherDashboard"), { ssr: false });
+const WeatherAlerts = dynamic(() => import("./WeatherAlerts"), { ssr: false });
 
 export default function AppShell() {
   const [tab, setTab] = useState<"analytics" | "diseases" | "badges" | "images" | "users" | "contributors" | "notifications" | "weather" | "alerts">("analytics");

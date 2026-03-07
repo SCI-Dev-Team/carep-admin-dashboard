@@ -271,8 +271,8 @@ function checkAirQualityAlerts(airQualityData: AirQualityData[]): Alert[] {
   return alerts;
 }
 
-// Database helper
-async function withPool<T>(fn: (pool: any) => Promise<T>) {
+// Database helper with optional retry on connection drop
+async function withPool<T>(fn: (pool: any) => Promise<T>, retries = 1): Promise<T> {
   const mysql = await import('mysql2/promise');
   const pool = mysql.createPool({
     host: process.env.DB_HOST ?? '127.0.0.1',
@@ -283,9 +283,17 @@ async function withPool<T>(fn: (pool: any) => Promise<T>) {
     waitForConnections: true,
     connectionLimit: 5,
     connectTimeout: 10000,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000,
   });
   try {
     return await fn(pool);
+  } catch (err: any) {
+    if (retries > 0 && (err?.code === 'PROTOCOL_CONNECTION_LOST' || err?.code === 'ECONNRESET')) {
+      await pool.end();
+      return withPool(fn, retries - 1);
+    }
+    throw err;
   } finally {
     await pool.end();
   }

@@ -283,7 +283,6 @@ async function withPool<T>(fn: (pool: any) => Promise<T>) {
     waitForConnections: true,
     connectionLimit: 5,
     connectTimeout: 10000,
-    acquireTimeout: 10000,
   });
   try {
     return await fn(pool);

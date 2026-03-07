@@ -12,7 +12,6 @@ async function withPool<T>(fn: (pool: any) => Promise<T>) {
     waitForConnections: true,
     connectionLimit: 5,
     connectTimeout: 10000,
-    acquireTimeout: 10000,
   });
   try {
     return await fn(pool);
@@ -199,7 +198,7 @@ export async function GET(request: Request) {
         await pool.query(`
           CREATE TABLE IF NOT EXISTS notifications (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
+            user_id BIGINT NOT NULL,
             subject VARCHAR(255),
             message TEXT NOT NULL,
             sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -208,6 +207,7 @@ export async function GET(request: Request) {
             INDEX idx_sent_at (sent_at)
           )
         `);
+        await pool.query(`ALTER TABLE notifications MODIFY COLUMN user_id BIGINT NOT NULL`).catch(() => {});
 
         // Get total count
         const [countResult] = await pool.query(`SELECT COUNT(*) as total FROM notifications`);
@@ -263,7 +263,7 @@ export async function POST(request: Request) {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS notifications (
           id INT AUTO_INCREMENT PRIMARY KEY,
-          user_id INT NOT NULL,
+          user_id BIGINT NOT NULL,
           subject VARCHAR(255),
           message TEXT NOT NULL,
           sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -272,6 +272,7 @@ export async function POST(request: Request) {
           INDEX idx_sent_at (sent_at)
         )
       `);
+      await pool.query(`ALTER TABLE notifications MODIFY COLUMN user_id BIGINT NOT NULL`).catch(() => {});
 
       // Get telegram chat IDs for selected users (all users, not just farmer_leads)
       const placeholders = user_ids.map(() => "?").join(",");

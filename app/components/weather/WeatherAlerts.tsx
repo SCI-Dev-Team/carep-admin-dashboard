@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-toastify';
+import { formatDateTimeShortCambodia } from '@/app/lib/date-utils';
 
 interface Alert {
   id: string;
@@ -48,6 +49,27 @@ interface WeatherAlertsProps {
   onClose?: () => void;
 }
 
+const SENT_KEYS_STORAGE_KEY = 'weatherAlertsSentKeys';
+
+function loadSentKeysFromStorage(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = sessionStorage.getItem(SENT_KEYS_STORAGE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveSentKeysToStorage(keys: Set<string>) {
+  try {
+    sessionStorage.setItem(SENT_KEYS_STORAGE_KEY, JSON.stringify([...keys]));
+  } catch {
+    // ignore
+  }
+}
+
 export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -60,14 +82,39 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
   const [history, setHistory] = useState<AlertHistory[]>([]);
   const [historyTotal, setHistoryTotal] = useState(0);
   const [dateFilter, setDateFilter] = useState<'today' | 'all'>('today');
+  // Keys of alerts already sent (init from sessionStorage so it survives refresh)
+  const [sentThisSession, setSentThisSession] = useState<Set<string>>(loadSentKeysFromStorage);
 
   const todayStr = (() => {
     const d = new Date();
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   })();
 
-  const filteredAlerts = dateFilter === 'today' ? alerts.filter((a) => a.forecast_date === todayStr) : alerts;
-  const filteredHistory = dateFilter === 'today' ? history.filter((h) => h.forecast_date === todayStr) : history;
+  // Normalize date to YYYY-MM-DD (API/DB may return ISO string or date-only)
+  const toDateOnly = (d: string | undefined | null): string => {
+    if (!d) return '';
+    const s = typeof d === 'string' ? d : (d as unknown as Date).toISOString?.() ?? String(d);
+    return s.slice(0, 10);
+  };
+
+  // Single key format so history and current alerts always match (type + area_id + date)
+  const sentKey = (type: string, areaId: number | string, forecastDate: string | undefined) =>
+    `${String(type)}-${Number(areaId)}-${toDateOnly(forecastDate)}`;
+
+  const filteredAlerts = dateFilter === 'today' ? alerts.filter((a) => toDateOnly(a.forecast_date) === todayStr) : alerts;
+  const filteredHistory = dateFilter === 'today' ? history.filter((h) => toDateOnly(h.forecast_date) === todayStr) : history;
+
+  // Keys of alerts already sent (from history) – show tick and prevent re-sending
+  const sentAlertKeys = useMemo(() => {
+    const set = new Set<string>();
+    history.forEach((h) => set.add(sentKey(h.alert_type, h.area_id, h.forecast_date)));
+    return set;
+  }, [history]);
+
+  const isAlertSent = (alert: Alert) => {
+    const key = sentKey(alert.type, alert.area_id, alert.forecast_date);
+    return sentAlertKeys.has(key) || sentThisSession.has(key);
+  };
 
   const summaryForDisplay =
     summary && dateFilter === 'today'
@@ -106,8 +153,16 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
       const result = await response.json();
 
       if (result.success) {
-        setHistory(result.history || []);
+        const list = result.history || [];
+        setHistory(list);
         setHistoryTotal(result.total || 0);
+        // Persist API history into sessionStorage so refresh still shows "sent" if API is slow or fails next time
+        if (list.length > 0) {
+          const stored = loadSentKeysFromStorage();
+          list.forEach((h: AlertHistory) => stored.add(`${String(h.alert_type)}-${Number(h.area_id)}-${(h.forecast_date || '').slice(0, 10)}`));
+          saveSentKeysToStorage(stored);
+          setSentThisSession(stored);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch alert history:', err);
@@ -119,22 +174,26 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
     fetchHistory();
   }, [checkAlerts, fetchHistory]);
 
-  const toggleAlertSelection = (alertId: string) => {
+  const toggleAlertSelection = (alert: Alert) => {
+    if (isAlertSent(alert)) return; // already sent – cannot select
     const newSelected = new Set(selectedAlerts);
-    if (newSelected.has(alertId)) {
-      newSelected.delete(alertId);
+    if (newSelected.has(alert.id)) {
+      newSelected.delete(alert.id);
     } else {
-      newSelected.add(alertId);
+      newSelected.add(alert.id);
     }
     setSelectedAlerts(newSelected);
   };
 
+  const sendableAlerts = useMemo(() => {
+    return filteredAlerts.filter((a) => !sentAlertKeys.has(sentKey(a.type, a.area_id, a.forecast_date)) && !sentThisSession.has(sentKey(a.type, a.area_id, a.forecast_date)));
+  }, [filteredAlerts, sentAlertKeys, sentThisSession]);
+
   const selectAll = () => {
-    const filtered = dateFilter === 'today' ? alerts.filter((a) => a.forecast_date === todayStr) : alerts;
-    if (selectedAlerts.size === filtered.length) {
+    if (selectedAlerts.size === sendableAlerts.length) {
       setSelectedAlerts(new Set());
     } else {
-      setSelectedAlerts(new Set(filtered.map((a) => a.id)));
+      setSelectedAlerts(new Set(sendableAlerts.map((a) => a.id)));
     }
   };
 
@@ -144,8 +203,14 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
     setSending(true);
 
     try {
-      const list = dateFilter === 'today' ? alerts.filter((a) => a.forecast_date === todayStr) : alerts;
-      const selectedAlertObjects = list.filter((a) => selectedAlerts.has(a.id));
+      const list = dateFilter === 'today' ? alerts.filter((a) => toDateOnly(a.forecast_date) === todayStr) : alerts;
+      const selectedAlertObjects = list.filter(
+        (a) => selectedAlerts.has(a.id) && !isAlertSent(a)
+      );
+      if (selectedAlertObjects.length === 0) {
+        setSelectedAlerts(new Set());
+        return;
+      }
       
       const response = await fetch('/api/weather/alerts', {
         method: 'POST',
@@ -166,7 +231,13 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
       const failed = result.total_failed || 0;
       toast.success(`${sent} notification(s) sent${failed > 0 ? `, ${failed} failed` : ''}`);
 
-      // Clear selection and refresh
+      // Mark as sent in state and sessionStorage so tick + disabled survive refresh
+      setSentThisSession((prev) => {
+        const next = new Set(prev);
+        selectedAlertObjects.forEach((a) => next.add(sentKey(a.type, a.area_id, a.forecast_date)));
+        saveSentKeysToStorage(next);
+        return next;
+      });
       setSelectedAlerts(new Set());
       await fetchHistory();
     } catch (err) {
@@ -215,14 +286,7 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
     }
   };
 
-  const formatDateTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  const formatDateTime = (dateStr: string) => formatDateTimeShortCambodia(dateStr);
 
   const formatAlertValue = (alert: Alert): string => {
     if (alert.value == null || alert.value === '') return '';
@@ -447,34 +511,51 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredAlerts.map((alert) => (
+              {filteredAlerts.map((alert) => {
+                const sent = isAlertSent(alert);
+                return (
                 <div
                   key={alert.id}
-                  className={`rounded-lg border p-4 cursor-pointer transition-all ${
-                    selectedAlerts.has(alert.id)
-                      ? 'ring-2 ring-emerald-500 ' + getSeverityColor(alert.severity)
-                      : getSeverityColor(alert.severity)
+                  className={`rounded-lg border p-4 transition-all ${
+                    sent
+                      ? 'opacity-85 cursor-default ' + getSeverityColor(alert.severity)
+                      : selectedAlerts.has(alert.id)
+                        ? 'ring-2 ring-emerald-500 cursor-pointer ' + getSeverityColor(alert.severity)
+                        : 'cursor-pointer ' + getSeverityColor(alert.severity)
                   }`}
-                  onClick={() => toggleAlertSelection(alert.id)}
+                  onClick={() => !sent && toggleAlertSelection(alert)}
                 >
                   <div className="flex items-start gap-4">
                     <div className="flex items-center gap-3">
                       <input
                         type="checkbox"
-                        checked={selectedAlerts.has(alert.id)}
-                        onChange={() => toggleAlertSelection(alert.id)}
-                        className="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                        onClick={(e) => e.stopPropagation()}
+                        checked={!sent && selectedAlerts.has(alert.id)}
+                        disabled={sent}
+                        readOnly={sent}
+                        onChange={() => !sent && toggleAlertSelection(alert)}
+                        onClick={(e) => { e.stopPropagation(); sent && e.preventDefault(); }}
+                        className="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={sent ? { pointerEvents: 'none', cursor: 'default' } : undefined}
                       />
                       <span className="text-3xl">{getAlertIcon(alert.type)}</span>
                     </div>
                     
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${getSeverityBadge(alert.severity)}`}>
-                          {alert.severity.toUpperCase()}
-                        </span>
-                        <h3 className="font-bold">{alert.title_kh}</h3>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getSeverityBadge(alert.severity)}`}>
+                            {alert.severity.toUpperCase()}
+                          </span>
+                          <h3 className="font-bold">{alert.title_kh}</h3>
+                        </div>
+                        {sent && (
+                          <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            Sent
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm opacity-80">{alert.title_en}</p>
                       
@@ -496,7 +577,8 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </>

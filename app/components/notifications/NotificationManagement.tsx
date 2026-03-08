@@ -10,6 +10,7 @@ import NotificationHistoryTab from "./NotificationHistoryTab";
 import FarmerResponsesTab from "./FarmerResponsesTab";
 import EditResponseModal from "./EditResponseModal";
 import BroadcastModal from "./BroadcastModal";
+import { formatDateTimeShortCambodia } from "@/app/lib/date-utils";
 
 const HISTORY_PAGE_SIZE = 20;
 
@@ -246,7 +247,7 @@ export default function NotificationManagement({ onClose }: { onClose: () => voi
         body: JSON.stringify({
           user_ids: Array.from(broadcastSelectedUsers),
           subject: "តម្លៃទីផ្សារថ្ងៃនេះ (Today's Market Prices)",
-          message: `📢 តម្លៃទីផ្សារបានធ្វើបច្ចុប្បន្នភាព!\n\n${priceMessage}\n\n🕐 ${new Date().toLocaleString('km-KH')}`,
+          message: `📢 តម្លៃទីផ្សារបានធ្វើបច្ចុប្បន្នភាព!\n\n${priceMessage}\n\n🕐 ${formatDateTimeShortCambodia(new Date().toISOString())} (Cambodia)`,
           include_price_form: false,
         }),
       });

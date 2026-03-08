@@ -43,7 +43,9 @@ export async function GET(request: Request) {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         const name = err instanceof Error ? err.name : "";
-        console.error("Image proxy failed:", remoteUrl, name, msg);
+        const cause = err instanceof Error ? (err as Error & { cause?: { code?: string } }).cause : null;
+        const code = cause && typeof cause === "object" && "code" in cause ? (cause as { code: string }).code : "";
+        console.error("Image proxy failed:", remoteUrl, name, msg, code ? `(${code})` : "", cause ?? "");
         return new Response("Error loading image", { status: 502 });
       }
     }

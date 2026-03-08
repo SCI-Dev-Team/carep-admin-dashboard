@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { formatDateTimeShortCambodia } from "@/app/lib/date-utils";
 
 type ImageUpload = {
   id: number;
@@ -415,7 +416,7 @@ export default function ImageManagement({ onClose }: { onClose: () => void }) {
 
                       {item.created_at && (
                         <div className="text-xs text-slate-400">
-                          {new Date(item.created_at).toLocaleDateString()}
+                          {formatDateTimeShortCambodia(item.created_at)}
                         </div>
                       )}
                     </div>

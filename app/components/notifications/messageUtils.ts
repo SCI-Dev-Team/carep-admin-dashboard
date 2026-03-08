@@ -1,4 +1,5 @@
 import type { PriceItem } from "./types";
+import { formatDateTimeCambodia } from "@/app/lib/date-utils";
 
 export function parseMessageToStructured(
   msg: string
@@ -54,13 +55,5 @@ export function structuredToMessage(
 }
 
 export function formatNotificationDate(dateStr?: string): string {
-  if (!dateStr) return "-";
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTimeCambodia(dateStr ?? null);
 }

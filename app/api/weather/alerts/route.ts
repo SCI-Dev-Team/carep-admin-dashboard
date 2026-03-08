@@ -68,8 +68,8 @@ const THRESHOLDS = {
   STRONG_WIND: 30,         // wind_speed >= 30
   HIGH_HUMIDITY: 85,       // humidity >= 85
   HIGH_TEMP_HUMIDITY: 30,  // temp >= 30 (for fungal risk)
-  CO_DANGER: 2000,         // CO >= 2000
-  SO2_DANGER: 40,          // SO2 >= 40
+  // Air pollution: use same formula as Weather Dashboard (Unhealthy when avg >= 3)
+  AQI_UNHEALTHY: 3,        // (co/1000 + so2 + dust) / 3 >= 3 => Unhealthy
 };
 
 // Alert types with Khmer translations
@@ -237,33 +237,31 @@ function checkWeatherAlerts(weatherData: WeatherData[]): Alert[] {
   return alerts;
 }
 
-// Check air quality and generate alerts
+// Check air quality and generate alerts (same formula as Weather Dashboard: Unhealthy when avg >= 3)
 function checkAirQualityAlerts(airQualityData: AirQualityData[]): Alert[] {
   const alerts: Alert[] = [];
   const now = new Date().toISOString();
 
   for (const data of airQualityData) {
-    const co = data.co;
-    const so2 = data.so2;
+    const co = Number(data.co) || 0;
+    const so2 = Number(data.so2) || 0;
+    const dust = Number(data.dust) || 0;
     const areaId = data.area_id;
     const provinceEn = areaEnglishMapping[areaId] || `Area ${areaId}`;
     const provinceKh = areaMapping[areaId] || `តំបន់ ${areaId}`;
 
-    // Air Pollution Risk: CO >= 2000 OR SO2 >= 40
-    if (co >= THRESHOLDS.CO_DANGER || so2 >= THRESHOLDS.SO2_DANGER) {
-      const pollutant = co >= THRESHOLDS.CO_DANGER ? 'CO' : 'SO2';
-      const value = co >= THRESHOLDS.CO_DANGER ? co : so2;
-      const threshold = co >= THRESHOLDS.CO_DANGER ? THRESHOLDS.CO_DANGER : THRESHOLDS.SO2_DANGER;
-
+    // Same as dashboard: avgPollution = (co/1000 + so2 + dust) / 3; Unhealthy when >= 3
+    const avgPollution = (co / 1000 + so2 + dust) / 3;
+    if (avgPollution >= THRESHOLDS.AQI_UNHEALTHY) {
       alerts.push({
-        id: `pollution-${areaId}-${data.forecast_date}-${data.forecast_hour}`,
+        id: `pollution-${areaId}-${data.forecast_date}-${data.forecast_hour ?? 0}`,
         ...ALERT_TYPES.AIR_POLLUTION,
         area_id: areaId,
         province_en: provinceEn,
         province_kh: provinceKh,
         forecast_date: data.forecast_date,
-        value: `${pollutant}: ${value.toFixed(2)}`,
-        threshold: `${pollutant} >= ${threshold}`,
+        value: `CO ${co.toFixed(0)} SO2 ${so2.toFixed(2)} Dust ${dust.toFixed(2)} µg/m³`,
+        threshold: `AQI ≥ ${THRESHOLDS.AQI_UNHEALTHY} (Unhealthy)`,
         created_at: now,
       });
     }
@@ -340,7 +338,7 @@ export async function GET(request: Request) {
     if (action === 'check') {
       // Fetch weather and air quality data
       const weatherUrl = process.env.WEATHER_API_BASE_URL || 'https://weather-scraper-8m4z.vercel.app/api/weather';
-      const airQualityUrl = process.env.AIR_QUALITY_API_URL || 'https://weather-scraper-8m4z.vercel.app/api/windy/air-quality';
+      const airQualityUrl = process.env.AIR_QUALITY_API_BASE_URL || process.env.AIR_QUALITY_API_URL || 'https://weather-scraper-8m4z.vercel.app/api/windy/air-quality';
 
       const [weatherResponse, airQualityResponse] = await Promise.all([
         fetch(weatherUrl, { next: { revalidate: 0 } }),
@@ -418,11 +416,19 @@ export async function GET(request: Request) {
         const total = (countResult as any[])[0]?.total || 0;
 
         const [rows] = await pool.query(
-          'SELECT * FROM weather_alerts ORDER BY sent_at DESC LIMIT ? OFFSET ?',
+          'SELECT id, alert_type, area_id, province_en, province_kh, title_en, title_kh, severity, value, forecast_date, users_notified, sent_at FROM weather_alerts ORDER BY sent_at DESC LIMIT ? OFFSET ?',
           [limit, offset]
         );
 
-        return { history: rows, total };
+        // Normalize so client key matching works: forecast_date YYYY-MM-DD, area_id number, alert_type string
+        const history = (rows as any[]).map((r) => ({
+          ...r,
+          alert_type: r.alert_type != null ? String(r.alert_type) : '',
+          area_id: Number(r.area_id),
+          forecast_date: r.forecast_date ? (typeof r.forecast_date === 'string' ? r.forecast_date.slice(0, 10) : new Date(r.forecast_date).toISOString().slice(0, 10)) : '',
+        }));
+
+        return { history, total };
       });
 
       return NextResponse.json({ success: true, ...result });
@@ -597,7 +603,7 @@ export async function PUT(request: Request) {
 
     // Fetch weather and air quality data
     const weatherUrl = process.env.WEATHER_API_BASE_URL || 'https://weather-scraper-8m4z.vercel.app/api/weather';
-    const airQualityUrl = process.env.AIR_QUALITY_API_URL || 'https://weather-scraper-8m4z.vercel.app/api/windy/air-quality';
+    const airQualityUrl = process.env.AIR_QUALITY_API_BASE_URL || process.env.AIR_QUALITY_API_URL || 'https://weather-scraper-8m4z.vercel.app/api/windy/air-quality';
 
     const [weatherResponse, airQualityResponse] = await Promise.all([
       fetch(weatherUrl, { cache: 'no-store' }),

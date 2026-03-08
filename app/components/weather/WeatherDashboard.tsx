@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
+import { formatDateCambodia, formatDateTimeShortCambodia } from '@/app/lib/date-utils';
 
 // Types
 interface HourlyWeather {
@@ -134,10 +135,7 @@ export default function WeatherDashboard({ onClose }: WeatherDashboardProps) {
   };
 
   // Format date for display
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-  };
+  const formatDate = (dateStr: string) => formatDateCambodia(dateStr);;
 
   if (loading) {
     return (
@@ -366,7 +364,7 @@ export default function WeatherDashboard({ onClose }: WeatherDashboardProps) {
                   </div>
                   
                   <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500">
-                    Updated: {new Date(item.forecast_timestamp).toLocaleString()}
+                    Updated: {formatDateTimeShortCambodia(item.forecast_timestamp)}
                   </div>
                 </div>
               );

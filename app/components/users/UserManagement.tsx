@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { formatDateTimeCambodia } from "@/app/lib/date-utils";
 
 type User = {
   user_id: number;
@@ -130,15 +131,7 @@ export default function UserManagement({ onClose }: { onClose: () => void }) {
   }
 
   function formatDate(dateStr?: string) {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", { 
-      month: "short", 
-      day: "numeric", 
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+    return formatDateTimeCambodia(dateStr ?? null);
   }
 
   function getEventBadge(eventType: string) {

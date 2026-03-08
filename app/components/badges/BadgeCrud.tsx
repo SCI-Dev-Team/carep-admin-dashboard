@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 type Badge = {
   id: number;
@@ -17,7 +18,6 @@ type Badge = {
 export default function BadgeCrud({ onClose }: { onClose: () => void }) {
   const [items, setItems] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Badge | null>(null);
   const [form, setForm] = useState<Partial<Badge>>({});
 
@@ -27,14 +27,13 @@ export default function BadgeCrud({ onClose }: { onClose: () => void }) {
 
   async function fetchList() {
     setLoading(true);
-    setError(null);
     try {
       const res = await fetch("/api/badges");
       const json = await res.json();
       setItems(json);
     } catch (err) {
       console.error(err);
-      setError("Failed to load badges");
+      toast.error("Failed to load badges");
     } finally {
       setLoading(false);
     }
@@ -61,7 +60,6 @@ export default function BadgeCrud({ onClose }: { onClose: () => void }) {
   }
 
   async function save() {
-    setError(null);
     try {
       if (editing && editing.id && editing.id > 0) {
         await fetch(`/api/badges?id=${editing.id}`, {
@@ -79,9 +77,10 @@ export default function BadgeCrud({ onClose }: { onClose: () => void }) {
       await fetchList();
       setEditing(null);
       setForm({});
+      toast.success(editing?.id && editing.id > 0 ? "Badge updated" : "Badge created");
     } catch (err) {
       console.error(err);
-      setError("Failed to save badge");
+      toast.error("Failed to save badge");
     }
   }
 
@@ -90,9 +89,10 @@ export default function BadgeCrud({ onClose }: { onClose: () => void }) {
     try {
       await fetch(`/api/badges?id=${id}`, { method: "DELETE" });
       await fetchList();
+      toast.success("Badge deleted");
     } catch (err) {
       console.error(err);
-      setError("Failed to delete");
+      toast.error("Failed to delete");
     }
   }
 
@@ -190,15 +190,6 @@ export default function BadgeCrud({ onClose }: { onClose: () => void }) {
             </div>
           </div>
         </div>
-
-        {error && (
-          <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-            <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            {error}
-          </div>
-        )}
 
         {/* Edit Modal */}
         {editing !== null && (

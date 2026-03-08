@@ -1,6 +1,7 @@
 // app/api/notifications/webapp/route.ts
 // API endpoint to receive price submissions from Telegram Web App
 import { NextResponse } from "next/server";
+import { sendNotificationWithVoice } from "@/app/lib/telegram-tts";
 
 async function withPool<T>(fn: (pool: any) => Promise<T>) {
   const mysql = await import("mysql2/promise");
@@ -164,11 +165,12 @@ export async function POST(request: Request) {
       );
     });
 
-    // Send confirmation to user via Telegram (Khmer)
+    // Send confirmation to user via Telegram (Khmer) + voice
     if (telegram_user_id) {
       const locationPart = location ? ` ពី${location}` : "";
       const confirmationMsg = `✅ សូមអរគុណសម្រាប់របាយការណ៍តម្លៃ!\n\nយើងបានទទួលតម្លៃអាហារបន្លៃ ${prices.length} ប្រកាស${locationPart}។`;
       await sendTelegramMessage(telegram_user_id, confirmationMsg);
+      await sendNotificationWithVoice(telegram_user_id, confirmationMsg);
     }
 
     return NextResponse.json({ 

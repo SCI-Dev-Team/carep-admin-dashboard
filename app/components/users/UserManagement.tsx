@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 type User = {
   user_id: number;
@@ -32,7 +33,6 @@ export default function UserManagement({ onClose }: { onClose: () => void }) {
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<string>("all");
   const [page, setPage] = useState(0);
@@ -75,7 +75,6 @@ export default function UserManagement({ onClose }: { onClose: () => void }) {
 
   async function fetchUsers() {
     setLoading(true);
-    setError(null);
     try {
       let url = `/api/users?limit=${pageSize}&offset=${page * pageSize}`;
       if (filterRole !== "all") {
@@ -90,7 +89,7 @@ export default function UserManagement({ onClose }: { onClose: () => void }) {
       setUsers(json);
     } catch (err) {
       console.error(err);
-      setError("Failed to load users");
+      toast.error("Failed to load users");
     } finally {
       setLoading(false);
     }
@@ -107,7 +106,6 @@ export default function UserManagement({ onClose }: { onClose: () => void }) {
   }
 
   async function updateRole(userId: number, newRole: string) {
-    setError(null);
     try {
       const res = await fetch(`/api/users?user_id=${userId}`, {
         method: "PUT",
@@ -119,9 +117,10 @@ export default function UserManagement({ onClose }: { onClose: () => void }) {
       }
       await fetchUsers();
       await fetchStats();
+      toast.success("Role updated");
     } catch (err) {
       console.error(err);
-      setError("Failed to update role");
+      toast.error("Failed to update role");
     }
   }
 
@@ -270,15 +269,6 @@ export default function UserManagement({ onClose }: { onClose: () => void }) {
             </div>
           </div>
         </div>
-
-        {error && (
-          <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-            <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            {error}
-          </div>
-        )}
 
         {/* Table */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">

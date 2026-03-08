@@ -1,5 +1,6 @@
 // app/api/notifications/route.ts
 import { NextResponse } from "next/server";
+import { stripHtmlForTTS, textToSpeech, sendTelegramAudio } from "@/app/lib/telegram-tts";
 
 async function withPool<T>(fn: (pool: any) => Promise<T>) {
   const mysql = await import("mysql2/promise");
@@ -234,7 +235,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { user_ids, subject, message, include_price_form } = body;
+    const { user_ids, subject, message, include_price_form, include_voice } = body;
 
     if (!user_ids || !Array.isArray(user_ids) || user_ids.length === 0) {
       return NextResponse.json({ error: "No user IDs provided" }, { status: 400 });
@@ -254,9 +255,17 @@ export async function POST(request: Request) {
       formattedMessage += "\n\n👇 ចុចប៊ូតុងខាងក្រោមដើម្បីដាក់ស្នើតម្លៃរបស់អ្នក៖";
     }
 
-    // Build WebApp URL from environment variable or request origin
-    const baseUrl = process.env.APP_URL || `${new URL(request.url).origin}`;
-    const webAppUrl = `${baseUrl}/telegram-webapp`;
+    // Build WebApp URL: use APP_URL if set (must be the public URL users can open, ideally HTTPS)
+    const baseUrl = (process.env.APP_URL || "").trim() || new URL(request.url).origin;
+    const webAppUrl = baseUrl ? `${baseUrl.replace(/\/$/, "")}/telegram-webapp` : "";
+
+    // Generate TTS audio once if voice is requested
+    const sendVoice = include_voice !== false; // default true
+    let voiceBuffer: Buffer | null = null;
+    if (sendVoice) {
+      const plainText = stripHtmlForTTS(formattedMessage);
+      voiceBuffer = await textToSpeech(plainText);
+    }
 
     const results = await withPool(async (pool) => {
       // Ensure notifications table exists
@@ -288,11 +297,15 @@ export async function POST(request: Request) {
         
         // Use telegram_chat_id if available, otherwise use user_id (which is the Telegram user ID)
         const chatId = user.telegram_chat_id || user.user_id.toString();
-        const success = await sendTelegramMessage(chatId, formattedMessage, {
-          includeWebApp: include_price_form,
+        const textOk = await sendTelegramMessage(chatId, formattedMessage, {
+          includeWebApp: include_price_form && !!webAppUrl && (webAppUrl.startsWith("http://") || webAppUrl.startsWith("https://")),
           webAppUrl: webAppUrl,
         });
-        status = success ? "sent" : "failed";
+        // Also send as voice (TTS) if requested and we have audio
+        if (voiceBuffer) {
+          await sendTelegramAudio(chatId, voiceBuffer, "voice.mp3");
+        }
+        status = textOk ? "sent" : "failed";
 
         // Record the notification
         await pool.query(

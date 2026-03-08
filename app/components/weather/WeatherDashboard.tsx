@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
 
 // Types
 interface HourlyWeather {
@@ -50,7 +51,6 @@ interface WeatherDashboardProps {
 
 export default function WeatherDashboard({ onClose }: WeatherDashboardProps) {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [hourlyData, setHourlyData] = useState<HourlyWeather[]>([]);
   const [dailyData, setDailyData] = useState<DailyWeather[]>([]);
   const [airQualityData, setAirQualityData] = useState<AirQualityData[]>([]);
@@ -61,7 +61,6 @@ export default function WeatherDashboard({ onClose }: WeatherDashboardProps) {
 
   const fetchWeatherData = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const response = await fetch('/api/weather?action=combined');
       const result = await response.json();
@@ -88,7 +87,7 @@ export default function WeatherDashboard({ onClose }: WeatherDashboardProps) {
         setSelectedDate(dates.sort()[0] as string);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load weather data');
+      toast.error(err instanceof Error ? err.message : 'Failed to load weather data');
     } finally {
       setLoading(false);
     }
@@ -145,23 +144,6 @@ export default function WeatherDashboard({ onClose }: WeatherDashboardProps) {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          <p className="font-semibold">Error loading weather data</p>
-          <p className="text-sm mt-1">{error}</p>
-          <button
-            onClick={fetchWeatherData}
-            className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg text-sm font-medium transition-colors"
-          >
-            Retry
-          </button>
         </div>
       </div>
     );

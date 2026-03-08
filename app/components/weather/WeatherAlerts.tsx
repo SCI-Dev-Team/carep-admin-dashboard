@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
 
 interface Alert {
   id: string;
@@ -50,7 +51,6 @@ interface WeatherAlertsProps {
 export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [summary, setSummary] = useState<AlertSummary | null>(null);
   const [checkedAt, setCheckedAt] = useState<string>('');
@@ -59,11 +59,29 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
   const [history, setHistory] = useState<AlertHistory[]>([]);
   const [historyTotal, setHistoryTotal] = useState(0);
-  const [sendResult, setSendResult] = useState<{ sent: number; failed: number } | null>(null);
+  const [dateFilter, setDateFilter] = useState<'today' | 'all'>('today');
 
+  const todayStr = (() => {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  })();
+
+  const filteredAlerts = dateFilter === 'today' ? alerts.filter((a) => a.forecast_date === todayStr) : alerts;
+  const filteredHistory = dateFilter === 'today' ? history.filter((h) => h.forecast_date === todayStr) : history;
+
+  const summaryForDisplay =
+    summary && dateFilter === 'today'
+      ? {
+          total: filteredAlerts.length,
+          high_heat: filteredAlerts.filter((a) => a.type === 'high_heat').length,
+          heavy_rain: filteredAlerts.filter((a) => a.type === 'heavy_rain').length,
+          strong_wind: filteredAlerts.filter((a) => a.type === 'strong_wind').length,
+          fungal_disease_risk: filteredAlerts.filter((a) => a.type === 'fungal_disease_risk').length,
+          air_pollution: filteredAlerts.filter((a) => a.type === 'air_pollution').length,
+        }
+      : summary;
   const checkAlerts = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const response = await fetch('/api/weather/alerts?action=check');
       const result = await response.json();
@@ -76,7 +94,7 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
       setSummary(result.summary || null);
       setCheckedAt(result.checked_at || new Date().toISOString());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to check alerts');
+      toast.error(err instanceof Error ? err.message : 'Failed to check alerts');
     } finally {
       setLoading(false);
     }
@@ -112,10 +130,11 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
   };
 
   const selectAll = () => {
-    if (selectedAlerts.size === alerts.length) {
+    const filtered = dateFilter === 'today' ? alerts.filter((a) => a.forecast_date === todayStr) : alerts;
+    if (selectedAlerts.size === filtered.length) {
       setSelectedAlerts(new Set());
     } else {
-      setSelectedAlerts(new Set(alerts.map(a => a.id)));
+      setSelectedAlerts(new Set(filtered.map((a) => a.id)));
     }
   };
 
@@ -123,11 +142,10 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
     if (selectedAlerts.size === 0) return;
 
     setSending(true);
-    setSendResult(null);
-    setError(null);
 
     try {
-      const selectedAlertObjects = alerts.filter(a => selectedAlerts.has(a.id));
+      const list = dateFilter === 'today' ? alerts.filter((a) => a.forecast_date === todayStr) : alerts;
+      const selectedAlertObjects = list.filter((a) => selectedAlerts.has(a.id));
       
       const response = await fetch('/api/weather/alerts', {
         method: 'POST',
@@ -144,16 +162,15 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
         throw new Error(result.error || 'Failed to send alerts');
       }
 
-      setSendResult({
-        sent: result.total_sent || 0,
-        failed: result.total_failed || 0,
-      });
+      const sent = result.total_sent || 0;
+      const failed = result.total_failed || 0;
+      toast.success(`${sent} notification(s) sent${failed > 0 ? `, ${failed} failed` : ''}`);
 
       // Clear selection and refresh
       setSelectedAlerts(new Set());
       await fetchHistory();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send alerts');
+      toast.error(err instanceof Error ? err.message : 'Failed to send alerts');
     } finally {
       setSending(false);
     }
@@ -207,6 +224,37 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
     });
   };
 
+  const formatAlertValue = (alert: Alert): string => {
+    if (alert.value == null || alert.value === '') return '';
+    const v = alert.value;
+    switch (alert.type) {
+      case 'high_heat':
+        return `${v}°C (Celsius)`;
+      case 'strong_wind':
+        return `${v} km/h`;
+      case 'heavy_rain':
+        return typeof v === 'string' ? v : String(v);
+      case 'fungal_disease_risk':
+        return typeof v === 'string' ? v : String(v);
+      case 'air_pollution':
+        return typeof v === 'string' ? v : String(v);
+      default:
+        return String(v);
+    }
+  };
+
+  const formatHistoryValue = (alertType: string, value: string): string => {
+    if (!value) return '';
+    switch (alertType) {
+      case 'high_heat':
+        return value.includes('°') ? value : `${value}°C (Celsius)`;
+      case 'strong_wind':
+        return value.includes('km/h') ? value : `${value} km/h`;
+      default:
+        return value;
+    }
+  };
+
   if (loading && alerts.length === 0) {
     return (
       <div className="p-8">
@@ -249,49 +297,59 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
         </button>
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          <p className="font-semibold">Error</p>
-          <p className="text-sm mt-1">{error}</p>
+      {/* Date filter */}
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-sm text-slate-600">Show:</span>
+        <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setDateFilter('today')}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              dateFilter === 'today' ? 'bg-emerald-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={() => setDateFilter('all')}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-l border-slate-200 ${
+              dateFilter === 'all' ? 'bg-emerald-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            All
+          </button>
         </div>
-      )}
-
-      {/* Success Message */}
-      {sendResult && (
-        <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 text-green-700">
-          <p className="font-semibold">Alerts Sent Successfully!</p>
-          <p className="text-sm mt-1">
-            {sendResult.sent} notifications sent, {sendResult.failed} failed
-          </p>
-        </div>
-      )}
+        {dateFilter === 'today' && (
+          <span className="text-xs text-slate-500">({todayStr})</span>
+        )}
+      </div>
 
       {/* Summary Cards */}
-      {summary && (
+      {summaryForDisplay && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
           <div className="bg-white rounded-lg border border-slate-200 p-4">
-            <div className="text-2xl font-bold text-slate-800">{summary.total}</div>
+            <div className="text-2xl font-bold text-slate-800">{summaryForDisplay.total}</div>
             <div className="text-sm text-slate-500">Total Alerts</div>
           </div>
           <div className="bg-red-50 rounded-lg border border-red-200 p-4">
-            <div className="text-2xl font-bold text-red-700">{summary.high_heat}</div>
+            <div className="text-2xl font-bold text-red-700">{summaryForDisplay.high_heat}</div>
             <div className="text-sm text-red-600">🌡️ High Heat</div>
           </div>
           <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
-            <div className="text-2xl font-bold text-blue-700">{summary.heavy_rain}</div>
+            <div className="text-2xl font-bold text-blue-700">{summaryForDisplay.heavy_rain}</div>
             <div className="text-sm text-blue-600">🌧️ Heavy Rain</div>
           </div>
           <div className="bg-cyan-50 rounded-lg border border-cyan-200 p-4">
-            <div className="text-2xl font-bold text-cyan-700">{summary.strong_wind}</div>
+            <div className="text-2xl font-bold text-cyan-700">{summaryForDisplay.strong_wind}</div>
             <div className="text-sm text-cyan-600">💨 Strong Wind</div>
           </div>
           <div className="bg-amber-50 rounded-lg border border-amber-200 p-4">
-            <div className="text-2xl font-bold text-amber-700">{summary.fungal_disease_risk}</div>
+            <div className="text-2xl font-bold text-amber-700">{summaryForDisplay.fungal_disease_risk}</div>
             <div className="text-sm text-amber-600">🍄 Fungal Risk</div>
           </div>
           <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
-            <div className="text-2xl font-bold text-purple-700">{summary.air_pollution}</div>
+            <div className="text-2xl font-bold text-purple-700">{summaryForDisplay.air_pollution}</div>
             <div className="text-sm text-purple-600">😷 Air Pollution</div>
           </div>
         </div>
@@ -307,7 +365,7 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          Current Alerts ({alerts.length})
+          Current Alerts ({filteredAlerts.length})
         </button>
         <button
           onClick={() => setActiveTab('history')}
@@ -317,32 +375,35 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          Sent History ({historyTotal})
+          Sent History ({dateFilter === 'today' ? filteredHistory.length : historyTotal})
         </button>
       </div>
 
       {activeTab === 'current' && (
         <>
           {/* Send Controls */}
-          {alerts.length > 0 && (
+          {filteredAlerts.length > 0 && (
             <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 mb-6">
+              <p className="text-sm text-slate-600 mb-3">
+                Each alert is sent only to users whose <strong>location</strong> matches that alert&apos;s province (e.g. Stung Treng alert → only users in Stung Treng).
+              </p>
               <div className="flex flex-wrap items-center gap-4">
                 <button
                   onClick={selectAll}
                   className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 rounded text-sm font-medium transition-colors"
                 >
-                  {selectedAlerts.size === alerts.length ? 'Deselect All' : 'Select All'}
+                  {selectedAlerts.size === filteredAlerts.length ? 'Deselect All' : 'Select All'}
                 </button>
-                
+
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-slate-600">Send to:</label>
+                  <label className="text-sm text-slate-600">Pool:</label>
                   <select
                     value={targetUsers}
                     onChange={(e) => setTargetUsers(e.target.value as 'all' | 'farmer_leads')}
                     className="px-3 py-1.5 bg-white border border-slate-300 rounded text-sm"
                   >
-                    <option value="all">All Users</option>
-                    <option value="farmer_leads">Farmer Leads Only</option>
+                    <option value="all">All users (then filter by province per alert)</option>
+                    <option value="farmer_leads">Farmer leads only (then filter by province per alert)</option>
                   </select>
                 </div>
 
@@ -374,15 +435,19 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
           )}
 
           {/* Alerts List */}
-          {alerts.length === 0 ? (
+          {filteredAlerts.length === 0 ? (
             <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
               <div className="text-4xl mb-3">✅</div>
               <h3 className="text-lg font-semibold text-green-800">No Active Alerts</h3>
-              <p className="text-green-600 mt-1">Weather conditions are normal across all provinces.</p>
+              <p className="text-green-600 mt-1">
+                {dateFilter === 'today'
+                  ? `No weather alerts for today (${todayStr}).`
+                  : 'Weather conditions are normal across all provinces.'}
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {alerts.map((alert) => (
+              {filteredAlerts.map((alert) => (
                 <div
                   key={alert.id}
                   className={`rounded-lg border p-4 cursor-pointer transition-all ${
@@ -420,9 +485,9 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
                         <span className="flex items-center gap-1">
                           📅 {alert.forecast_date}
                         </span>
-                        {alert.value && (
+                        {alert.value != null && alert.value !== '' && (
                           <span className="flex items-center gap-1 font-mono bg-black/10 px-2 rounded">
-                            {alert.value}
+                            {formatAlertValue(alert)}
                           </span>
                         )}
                       </div>
@@ -439,9 +504,9 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
 
       {activeTab === 'history' && (
         <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-          {history.length === 0 ? (
+          {filteredHistory.length === 0 ? (
             <div className="p-8 text-center text-slate-500">
-              No alert history yet. Sent alerts will appear here.
+              {dateFilter === 'today' ? `No alerts sent today (${todayStr}).` : 'No alert history yet. Sent alerts will appear here.'}
             </div>
           ) : (
             <table className="w-full">
@@ -455,7 +520,7 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {history.map((item) => (
+                {filteredHistory.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -466,7 +531,7 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
                     <td className="px-4 py-3 text-sm">
                       {item.province_kh || item.province_en}
                     </td>
-                    <td className="px-4 py-3 text-sm font-mono">{item.value}</td>
+                    <td className="px-4 py-3 text-sm font-mono">{formatHistoryValue(item.alert_type, item.value)}</td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-sm">
                         {item.users_notified} users

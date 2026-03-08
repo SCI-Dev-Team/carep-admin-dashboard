@@ -1,7 +1,8 @@
  "use client";
  
 import React, { useMemo, useState } from "react";
-import { useAuth } from "./AuthContext";
+import { toast } from "react-toastify";
+import { useAuth } from "../layout/AuthContext";
 
 export default function AnalyticsDashboard() {
   const [username, setUsername] = useState("");
@@ -9,7 +10,6 @@ export default function AnalyticsDashboard() {
   const [query, setQuery] = useState("");
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const [selectedUser, setSelectedUser] = useState<number | string | null>(null);
@@ -56,14 +56,13 @@ export default function AnalyticsDashboard() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     setLoading(true);
     try {
       const json = await auth.login(username, password);
       setData(json);
       setPassword("");
     } catch (err: any) {
-      setError(err?.message ?? "Failed to authenticate");
+      toast.error(err?.message ?? "Failed to authenticate");
     } finally {
       setLoading(false);
     }
@@ -72,7 +71,6 @@ export default function AnalyticsDashboard() {
   async function fetchAnalytics() {
     if (!auth.basicAuth) return;
     setLoading(true);
-    setError(null);
     try {
       const res = await fetch("/api/analytics", {
         headers: { Authorization: "Basic " + auth.basicAuth },
@@ -84,7 +82,7 @@ export default function AnalyticsDashboard() {
       setData(json);
     } catch (err: any) {
       console.error("fetchAnalytics error", err);
-      setError(err?.message ?? "Failed to load analytics");
+      toast.error(err?.message ?? "Failed to load analytics");
     } finally {
       setLoading(false);
     }
@@ -147,14 +145,6 @@ export default function AnalyticsDashboard() {
                   autoComplete="current-password"
                 />
               </div>
-              {error && (
-                <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                  <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                  {error}
-                </div>
-              )}
               <div className="flex items-center gap-3 pt-2">
                 <button
                   type="button"
@@ -300,15 +290,6 @@ export default function AnalyticsDashboard() {
             </div>
           </div>
         </div>
-
-        {error && (
-          <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-            <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            {error}
-          </div>
-        )}
 
         {/* Main Content */}
         <div className="flex gap-6">

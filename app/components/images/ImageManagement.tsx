@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 type ImageUpload = {
   id: number;
@@ -22,10 +23,11 @@ type ImageUpload = {
 export default function ImageManagement({ onClose }: { onClose: () => void }) {
   const [items, setItems] = useState<ImageUpload[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [filterLabel, setFilterLabel] = useState<string>("all");
   const [page, setPage] = useState(0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [submitting, setSubmitting] = useState(false);
   const pageSize = 20;
 
   useEffect(() => {
@@ -34,7 +36,6 @@ export default function ImageManagement({ onClose }: { onClose: () => void }) {
 
   async function fetchList() {
     setLoading(true);
-    setError(null);
     try {
       let url = `/api/images?limit=${pageSize}&offset=${page * pageSize}`;
       if (filterLabel !== "all") {
@@ -46,35 +47,69 @@ export default function ImageManagement({ onClose }: { onClose: () => void }) {
       setItems(json);
     } catch (err) {
       console.error(err);
-      setError("Failed to load images");
+      toast.error("Failed to load images");
     } finally {
       setLoading(false);
     }
   }
 
-  async function toggleLabel(id: number, currentLabel: number) {
-    setError(null);
-    try {
-      await fetch(`/api/images?id=${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label: currentLabel === 1 ? 0 : 1 }),
-      });
-      await fetchList();
-    } catch (err) {
-      console.error(err);
-      setError("Failed to update label");
+  function toggleSelect(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function selectAllOnPage() {
+    if (selectedIds.size === items.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(items.map((i) => i.id)));
     }
   }
 
-  async function remove(id: number) {
-    if (!confirm("Delete this upload? This will also delete the image file.")) return;
+  async function submitLabel(labeled: 0 | 1) {
+    if (selectedIds.size === 0) return;
+    setSubmitting(true);
     try {
-      await fetch(`/api/images?id=${id}`, { method: "DELETE" });
+      const ids = Array.from(selectedIds);
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`/api/images?id=${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ label: labeled }),
+          })
+        )
+      );
+      toast.success(`${ids.length} image(s) ${labeled ? "marked as labeled" : "marked as unlabeled"}`);
+      setSelectedIds(new Set());
       await fetchList();
     } catch (err) {
       console.error(err);
-      setError("Failed to delete");
+      toast.error("Failed to update labels");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function submitDelete() {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} selected image(s)? This will also delete the image files.`)) return;
+    setSubmitting(true);
+    try {
+      const ids = Array.from(selectedIds);
+      await Promise.all(ids.map((id) => fetch(`/api/images?id=${id}`, { method: "DELETE" })));
+      toast.success(`${ids.length} image(s) deleted`);
+      setSelectedIds(new Set());
+      await fetchList();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -227,12 +262,52 @@ export default function ImageManagement({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {error && (
-          <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-            <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            {error}
+        {/* Batch actions bar */}
+        {items.length > 0 && (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center gap-4">
+              <span className="font-medium text-slate-700">Select images, then apply an action:</span>
+              <button
+                type="button"
+                onClick={selectAllOnPage}
+                className="text-sm font-medium text-slate-600 hover:text-slate-800 underline"
+              >
+                {selectedIds.size === items.length ? "Deselect all" : "Select all on page"}
+              </button>
+              {selectedIds.size > 0 && (
+                <span className="text-sm text-slate-500">
+                  {selectedIds.size} selected
+                </span>
+              )}
+            </div>
+            {selectedIds.size > 0 && (
+              <div className="px-5 py-3 flex flex-wrap items-center gap-3 border-b border-slate-100 bg-white">
+                <button
+                  type="button"
+                  onClick={() => submitLabel(1)}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <span className="animate-spin">⏳</span>
+                  ) : (
+                    <span>✓</span>
+                  )}
+                  Submit
+                </button>
+                <button
+                  type="button"
+                  onClick={submitDelete}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 shadow-sm hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -262,8 +337,20 @@ export default function ImageManagement({ onClose }: { onClose: () => void }) {
                 {items.map((item) => (
                   <div 
                     key={item.id} 
-                    className="group relative bg-gradient-to-br from-slate-50 to-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-slate-300 transition-all"
+                    className={`group relative bg-gradient-to-br from-slate-50 to-white rounded-xl border overflow-hidden hover:shadow-lg transition-all ${
+                      selectedIds.has(item.id) ? "border-emerald-500 ring-2 ring-emerald-500/30" : "border-slate-200 hover:border-slate-300"
+                    }`}
                   >
+                    {/* Select checkbox */}
+                    <div className="absolute top-2 right-2 z-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(item.id)}
+                        onChange={() => toggleSelect(item.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer bg-white/90 shadow"
+                      />
+                    </div>
                     {/* Image Preview */}
                     <div 
                       className="aspect-square bg-slate-100 cursor-pointer relative overflow-hidden"
@@ -331,27 +418,6 @@ export default function ImageManagement({ onClose }: { onClose: () => void }) {
                           {new Date(item.created_at).toLocaleDateString()}
                         </div>
                       )}
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
-                        <label className="flex-1 inline-flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={item.label === 1}
-                            onChange={() => toggleLabel(item.id, item.label)}
-                            className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                          />
-                          <span className="text-xs text-slate-600">Labeled</span>
-                        </label>
-                        <button
-                          onClick={() => remove(item.id)}
-                          className="inline-flex items-center justify-center rounded-lg p-1.5 text-slate-400 hover:bg-red-100 hover:text-red-600 transition-all"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
                     </div>
                   </div>
                 ))}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 // Telegram WebApp types
 declare global {
@@ -109,7 +110,6 @@ export default function TelegramWebApp() {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [telegramUser, setTelegramUser] = useState<{ id: number; name: string } | null>(null);
   const [isDark, setIsDark] = useState(false);
   const [isTelegramWebApp, setIsTelegramWebApp] = useState(false);
@@ -182,12 +182,11 @@ export default function TelegramWebApp() {
   async function submitPrices() {
     const validPrices = prices.filter((p) => p.price.trim() !== "");
     if (validPrices.length === 0) {
-      setError("សូមបញ្ចូលតម្លៃយ៉ាងតិចមួយ");
+      toast.error("សូមបញ្ចូលតម្លៃយ៉ាងតិចមួយ");
       return;
     }
 
     setIsSubmitting(true);
-    setError(null);
 
     const tg = window.Telegram?.WebApp;
     if (tg) {
@@ -223,7 +222,7 @@ export default function TelegramWebApp() {
         }
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "ដាក់ស្នើតម្លៃមិនបានជោគជ័យ");
+      toast.error(err instanceof Error ? err.message : "ដាក់ស្នើតម្លៃមិនបានជោគជ័យ");
     } finally {
       setIsSubmitting(false);
       if (tg) {
@@ -266,16 +265,6 @@ export default function TelegramWebApp() {
       </div>
 
       <div className="p-4 space-y-4">
-        {/* Error Alert */}
-        {error && (
-          <div className="bg-red-100 border border-red-200 rounded-lg p-3 flex items-center gap-2">
-            <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-red-700 text-sm">{error}</span>
-          </div>
-        )}
-
         {/* Province / Location */}
         <div className={`${cardColor} rounded-xl p-4 border ${borderColor}`}>
           <label className={`block text-sm font-medium ${textColor} mb-2`}>

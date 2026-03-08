@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { stripHtmlForTTS, textToSpeech, sendTelegramAudio } from '@/app/lib/telegram-tts';
 
 // Area ID to province name mapping
 const areaMapping: { [key: number]: string } = {
@@ -500,9 +501,22 @@ export async function POST(request: Request) {
 
       const sendResults: { alertId: string; sentCount: number; failedCount: number }[] = [];
 
+      // Match user location to alert province (English or Khmer, flexible for free-text location)
+      const userIsInProvince = (user: { location?: string | null }, provinceEn: string, provinceKh: string): boolean => {
+        const loc = (user.location || '').trim();
+        if (!loc) return false;
+        const locLower = loc.toLowerCase();
+        const enLower = (provinceEn || '').toLowerCase();
+        const kh = (provinceKh || '').trim();
+        return Boolean((enLower && locLower.includes(enLower)) || (kh && loc.includes(kh)));
+      };
+
       for (const alert of alerts as Alert[]) {
         let sentCount = 0;
         let failedCount = 0;
+
+        // Only send this alert to users in this alert's province
+        const usersInProvince = users.filter((u: any) => userIsInProvince(u, alert.province_en, alert.province_kh));
 
         // Format message with bilingual content
         const message = `<b>${alert.title_kh}</b>\n${alert.title_en}\n\n` +
@@ -512,12 +526,15 @@ export async function POST(request: Request) {
           `${alert.message_en}\n\n` +
           `⚠️ ${alert.value}`;
 
-        // Send to each user
-        for (const user of users) {
+        // TTS once per alert, then send text + voice to each user
+        const voiceBuffer = await textToSpeech(stripHtmlForTTS(message));
+
+        for (const user of usersInProvince) {
           const chatId = user.telegram_chat_id || user.user_id.toString();
           const success = await sendTelegramMessage(chatId, message);
           if (success) {
             sentCount++;
+            if (voiceBuffer) await sendTelegramAudio(chatId, voiceBuffer, 'voice.mp3');
           } else {
             failedCount++;
           }

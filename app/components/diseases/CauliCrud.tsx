@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 type Disease = {
   id: number;
@@ -17,7 +18,6 @@ export default function CauliCrud({ onClose }: { onClose: () => void }) {
   const [items, setItems] = useState<Disease[]>([]);
   const [crop, setCrop] = useState<"cauliflower" | "cucumber" | "cabbage">("cauliflower");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Disease | null>(null);
   const [form, setForm] = useState<Partial<Disease>>({});
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -34,14 +34,13 @@ export default function CauliCrud({ onClose }: { onClose: () => void }) {
 
   async function fetchList() {
     setLoading(true);
-    setError(null);
     try {
       const res = await fetch(`/api/cauliflower?crop=${crop}`);
       const json = await res.json();
       setItems(json);
     } catch (err) {
       console.error(err);
-      setError("Failed to load");
+      toast.error("Failed to load");
     } finally {
       setLoading(false);
     }
@@ -59,7 +58,6 @@ export default function CauliCrud({ onClose }: { onClose: () => void }) {
   }
 
   async function save() {
-    setError(null);
     try {
       if (editing) {
         await fetch(`/api/cauliflower?crop=${crop}`, {
@@ -77,9 +75,10 @@ export default function CauliCrud({ onClose }: { onClose: () => void }) {
       await fetchList();
       setEditing(null);
       setForm({});
+      toast.success(editing?.id && editing.id > 0 ? "Disease updated" : "Disease added");
     } catch (err) {
       console.error(err);
-      setError("Failed to save");
+      toast.error("Failed to save");
     }
   }
 
@@ -88,9 +87,10 @@ export default function CauliCrud({ onClose }: { onClose: () => void }) {
     try {
       await fetch(`/api/cauliflower?id=${id}&crop=${crop}`, { method: "DELETE" });
       await fetchList();
+      toast.success("Record deleted");
     } catch (err) {
       console.error(err);
-      setError("Failed to delete");
+      toast.error("Failed to delete");
     }
   }
 
@@ -211,15 +211,6 @@ export default function CauliCrud({ onClose }: { onClose: () => void }) {
             </div>
           </div>
         </div>
-
-        {error && (
-          <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-            <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            {error}
-          </div>
-        )}
 
         {/* Edit Modal */}
         {editing !== null && (

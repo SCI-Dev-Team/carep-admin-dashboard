@@ -1,6 +1,7 @@
 // app/api/notifications/webhook/route.ts
 // Telegram Webhook endpoint to receive farmer responses
 import { NextResponse } from "next/server";
+import { sendNotificationWithVoice } from "@/app/lib/telegram-tts";
 
 async function withPool<T>(fn: (pool: any) => Promise<T>) {
   const mysql = await import("mysql2/promise");
@@ -122,11 +123,10 @@ export async function POST(request: Request) {
       );
     });
 
-    // Send acknowledgement to farmer (Khmer)
-    await sendTelegramMessage(
-      chatId,
-      "សូមអរគុណសម្រាប់ការឆ្លើយតប! យើងបានទទួលសាររបស់អ្នកហើយ។"
-    );
+    // Send acknowledgement to farmer (Khmer) + voice
+    const ackMessage = "សូមអរគុណសម្រាប់ការឆ្លើយតប! យើងបានទទួលសាររបស់អ្នកហើយ។";
+    await sendTelegramMessage(chatId, ackMessage);
+    await sendNotificationWithVoice(chatId, ackMessage);
 
     return NextResponse.json({ ok: true });
   } catch (err) {

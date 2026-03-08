@@ -104,10 +104,12 @@ export async function GET(request: Request) {
       return r;
     });
     
-    // Add validation and disease name placeholder
+    // When UPLOADS_SERVE_URL is set, dashboard is not on the same host as uploads:
+    // we can't check the filesystem, so assume exists and let the serve endpoint proxy (or 404).
+    const useRemoteServe = !!process.env.UPLOADS_SERVE_URL;
     const rowsWithValidation = (rows as any[]).map((row) => ({
       ...row,
-      image_exists: validateImageFile(row.image_file, projectBasePath),
+      image_exists: useRemoteServe || validateImageFile(row.image_file, projectBasePath),
       // Add placeholder disease names (will show disease_code if table doesn't exist)
       disease_name: row.disease_code || 'N/A',
       disease_name_km: null,

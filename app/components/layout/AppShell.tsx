@@ -4,18 +4,26 @@ import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { AuthProvider } from "./AuthContext";
 
-const AnalyticsDashboard = dynamic(() => import("./AnalyticsDashboard"), { ssr: false });
-const CauliCrud = dynamic(() => import("./CauliCrud"), { ssr: false });
-const BadgeCrud = dynamic(() => import("./BadgeCrud"), { ssr: false });
-const ImageManagement = dynamic(() => import("./ImageManagement"), { ssr: false });
-const UserManagement = dynamic(() => import("./UserManagement"), { ssr: false });
-const TopContributors = dynamic(() => import("./TopContributors"), { ssr: false });
-const NotificationManagement = dynamic(() => import("./NotificationManagement"), { ssr: false });
-const WeatherDashboard = dynamic(() => import("./WeatherDashboard"), { ssr: false });
-const WeatherAlerts = dynamic(() => import("./WeatherAlerts"), { ssr: false });
+const AnalyticsDashboard = dynamic(() => import("../analytics/AnalyticsDashboard"), { ssr: false });
+const CauliCrud = dynamic(() => import("../diseases/CauliCrud"), { ssr: false });
+const BadgeCrud = dynamic(() => import("../badges/BadgeCrud"), { ssr: false });
+const ImageManagement = dynamic(() => import("../images/ImageManagement"), { ssr: false });
+const UserManagement = dynamic(() => import("../users/UserManagement"), { ssr: false });
+const TopContributors = dynamic(() => import("../users/TopContributors"), { ssr: false });
+const NotificationManagement = dynamic(() => import("../notifications/NotificationManagement"), { ssr: false });
+const WeatherDashboard = dynamic(() => import("../weather/WeatherDashboard"), { ssr: false });
+const WeatherAlerts = dynamic(() => import("../weather/WeatherAlerts"), { ssr: false });
+
+type TabId = "analytics" | "diseases" | "badges" | "images" | "users" | "contributors" | "notifications" | "weather" | "alerts";
 
 export default function AppShell() {
-  const [tab, setTab] = useState<"analytics" | "diseases" | "badges" | "images" | "users" | "contributors" | "notifications" | "weather" | "alerts">("analytics");
+  const [tab, setTab] = useState<TabId>("analytics");
+  const [visitedTabs, setVisitedTabs] = useState<Set<TabId>>(() => new Set(["analytics"]));
+
+  const handleTabChange = (tabId: TabId) => {
+    setTab(tabId);
+    setVisitedTabs((prev) => new Set(prev).add(tabId));
+  };
 
   const navItems = [
     { 
@@ -129,7 +137,7 @@ export default function AppShell() {
               {navItems.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => setTab(item.id)}
+                  onClick={() => handleTabChange(item.id)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     tab === item.id 
                       ? "bg-emerald-50 text-emerald-700 shadow-sm" 
@@ -157,26 +165,52 @@ export default function AppShell() {
           </div>
         </aside>
 
-        {/* Main Content */}
+        {/* Main Content: only mount visited tabs, hide inactive so state is preserved and no refetch on switch */}
         <main className="flex-1 overflow-auto">
-          {tab === "analytics" ? (
-            <AnalyticsDashboard />
-          ) : tab === "diseases" ? (
-            <CauliCrud onClose={() => setTab("analytics")} />
-          ) : tab === "badges" ? (
-            <BadgeCrud onClose={() => setTab("analytics")} />
-          ) : tab === "images" ? (
-            <ImageManagement onClose={() => setTab("analytics")} />
-          ) : tab === "contributors" ? (
-            <TopContributors onClose={() => setTab("analytics")} />
-          ) : tab === "notifications" ? (
-            <NotificationManagement onClose={() => setTab("analytics")} />
-          ) : tab === "weather" ? (
-            <WeatherDashboard onClose={() => setTab("analytics")} />
-          ) : tab === "alerts" ? (
-            <WeatherAlerts onClose={() => setTab("analytics")} />
-          ) : (
-            <UserManagement onClose={() => setTab("analytics")} />
+          {visitedTabs.has("analytics") && (
+            <div className="h-full" style={{ display: tab === "analytics" ? "block" : "none" }}>
+              <AnalyticsDashboard />
+            </div>
+          )}
+          {visitedTabs.has("diseases") && (
+            <div className="h-full" style={{ display: tab === "diseases" ? "block" : "none" }}>
+              <CauliCrud onClose={() => setTab("analytics")} />
+            </div>
+          )}
+          {visitedTabs.has("badges") && (
+            <div className="h-full" style={{ display: tab === "badges" ? "block" : "none" }}>
+              <BadgeCrud onClose={() => setTab("analytics")} />
+            </div>
+          )}
+          {visitedTabs.has("images") && (
+            <div className="h-full" style={{ display: tab === "images" ? "block" : "none" }}>
+              <ImageManagement onClose={() => setTab("analytics")} />
+            </div>
+          )}
+          {visitedTabs.has("users") && (
+            <div className="h-full" style={{ display: tab === "users" ? "block" : "none" }}>
+              <UserManagement onClose={() => setTab("analytics")} />
+            </div>
+          )}
+          {visitedTabs.has("contributors") && (
+            <div className="h-full" style={{ display: tab === "contributors" ? "block" : "none" }}>
+              <TopContributors onClose={() => setTab("analytics")} />
+            </div>
+          )}
+          {visitedTabs.has("notifications") && (
+            <div className="h-full" style={{ display: tab === "notifications" ? "block" : "none" }}>
+              <NotificationManagement onClose={() => setTab("analytics")} />
+            </div>
+          )}
+          {visitedTabs.has("weather") && (
+            <div className="h-full" style={{ display: tab === "weather" ? "block" : "none" }}>
+              <WeatherDashboard onClose={() => setTab("analytics")} />
+            </div>
+          )}
+          {visitedTabs.has("alerts") && (
+            <div className="h-full" style={{ display: tab === "alerts" ? "block" : "none" }}>
+              <WeatherAlerts onClose={() => setTab("analytics")} />
+            </div>
           )}
         </main>
       </div>

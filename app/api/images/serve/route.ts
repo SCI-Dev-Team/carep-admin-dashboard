@@ -14,14 +14,24 @@ export async function GET(request: Request) {
 
     const baseUrl = process.env.UPLOADS_SERVE_URL?.trim().replace(/\/$/, "");
     if (baseUrl) {
-      // Dashboard runs on a different host (e.g. Vercel): proxy from the bot/server that has the files
+      // Dashboard runs on a different host (e.g. Vercel): proxy from the bot/server that has the files.
+      // Production checklist: UPLOADS_SERVE_URL set in Vercel; GCP firewall allows tcp:9000 from 0.0.0.0/0;
+      // on GCP run: python3 -m http.server 9000 --bind 0.0.0.0 (from the dir that contains uploads/).
       let pathPart = imagePath.startsWith("/") ? imagePath.slice(1) : imagePath;
-      // If the remote server was started inside uploads/ (root = uploads contents), strip "uploads/" prefix
       if (pathPart.toLowerCase().startsWith("uploads/")) pathPart = pathPart.slice(8);
       const remoteUrl = `${baseUrl}/${pathPart}`;
       try {
-        const res = await fetch(remoteUrl, { cache: "no-store" });
-        if (!res.ok) return new Response("Image not found", { status: 404 });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const res = await fetch(remoteUrl, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (!res.ok) {
+          console.error("Image proxy upstream not ok:", remoteUrl, res.status);
+          return new Response("Image not found", { status: 404 });
+        }
         const contentType = res.headers.get("content-type") || "image/jpeg";
         const body = await res.arrayBuffer();
         return new Response(body, {
@@ -31,7 +41,9 @@ export async function GET(request: Request) {
           },
         });
       } catch (err) {
-        console.error("Error proxying image:", remoteUrl, err);
+        const msg = err instanceof Error ? err.message : String(err);
+        const name = err instanceof Error ? err.name : "";
+        console.error("Image proxy failed:", remoteUrl, name, msg);
         return new Response("Error loading image", { status: 502 });
       }
     }

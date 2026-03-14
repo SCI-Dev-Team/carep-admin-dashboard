@@ -67,13 +67,126 @@ interface PriceSubmission {
   init_data?: string;
 }
 
-// POST - Receive price submission from Telegram Web App
+// POST - Receive price submission from Telegram Web App (JSON form or multipart image)
 export async function POST(request: Request) {
   try {
+    const contentType = request.headers.get("content-type") || "";
+
+    // Image upload (multipart): send to GCP price-images folder if PRICE_IMAGE_UPLOAD_URL set, else store base64
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      const file = formData.get("image") as File | null;
+      const telegramUserId = formData.get("telegram_user_id");
+      const telegramUserName = formData.get("telegram_user_name");
+      const caption = (formData.get("caption") as string) || "";
+      const location = (formData.get("location") as string) || "";
+
+      if (!file || !(file instanceof File) || file.size === 0) {
+        return NextResponse.json({ error: "No image provided" }, { status: 400 });
+      }
+      if (!location.trim()) {
+        return NextResponse.json({ error: "សូមជ្រើសរើសខេត្ត/ក្រុង (Province is required)" }, { status: 400 });
+      }
+
+      const userId = telegramUserId ? Number(telegramUserId) : 0;
+      const userName = (telegramUserName as string) || "Unknown";
+      const locationTrim = location.trim();
+      const message = caption.trim()
+        ? `📷 [Image] 📍 ${locationTrim}\n${caption.trim()}`
+        : `📷 [Image] 📍 ${locationTrim}`;
+
+      let imageUrl: string | null = null;
+      let imageData: string | null = null;
+
+      // Optional: GCP upload endpoint that saves to price-images folder and returns { path } or { url }
+      const uploadUrl = process.env.PRICE_IMAGE_UPLOAD_URL?.trim();
+      if (uploadUrl) {
+        try {
+          const forwardForm = new FormData();
+          forwardForm.append("image", file);
+          const res = await fetch(uploadUrl, {
+            method: "POST",
+            body: forwardForm,
+          });
+          if (!res.ok) {
+            const errText = await res.text();
+            console.error("Price image upload to GCP failed:", res.status, errText);
+            throw new Error("Upload to server failed");
+          }
+          const data = (await res.json()) as { url?: string; path?: string };
+          if (data.url) {
+            imageUrl = data.url;
+          } else if (data.path) {
+            const base = uploadUrl.replace(/\/upload-price-image\/?$/, "").replace(/\/$/, "");
+            imageUrl = `${base}/${data.path.startsWith("/") ? data.path.slice(1) : data.path}`;
+          }
+        } catch (e) {
+          console.error("Price image upload error:", e);
+          return NextResponse.json(
+            { error: "Failed to upload image to server. Please try again." },
+            { status: 502 }
+          );
+        }
+      }
+
+      if (!imageUrl) {
+        const buf = await file.arrayBuffer();
+        imageData = Buffer.from(buf).toString("base64");
+      }
+
+      await withPool(async (pool) => {
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS farmer_responses (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            telegram_user_id BIGINT NOT NULL,
+            telegram_chat_id BIGINT NOT NULL,
+            sender_name VARCHAR(255),
+            message TEXT NOT NULL,
+            received_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            is_read BOOLEAN DEFAULT FALSE,
+            INDEX idx_telegram_user_id (telegram_user_id),
+            INDEX idx_received_at (received_at)
+          )
+        `);
+        try {
+          await pool.query(`ALTER TABLE farmer_responses ADD COLUMN image_data MEDIUMTEXT`);
+        } catch (e: any) {
+          if (e?.code !== "ER_DUP_FIELDNAME") throw e;
+        }
+        try {
+          await pool.query(`ALTER TABLE farmer_responses ADD COLUMN image_file_id VARCHAR(255)`);
+        } catch (e: any) {
+          if (e?.code !== "ER_DUP_FIELDNAME") throw e;
+        }
+        try {
+          await pool.query(`ALTER TABLE farmer_responses ADD COLUMN image_url VARCHAR(512)`);
+        } catch (e: any) {
+          if (e?.code !== "ER_DUP_FIELDNAME") throw e;
+        }
+        try {
+          await pool.query(`ALTER TABLE farmer_responses ADD COLUMN location VARCHAR(255)`);
+        } catch (e: any) {
+          if (e?.code !== "ER_DUP_FIELDNAME") throw e;
+        }
+        await pool.query(
+          `INSERT INTO farmer_responses (telegram_user_id, telegram_chat_id, sender_name, message, image_data, image_url, location) 
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [userId, userId, userName, message, imageData, imageUrl, locationTrim]
+        );
+      });
+
+      if (userId) {
+        const confirmationMsg = "✅ សូមអរគុណ! យើងបានទទួលរូបថតតម្លៃរបស់អ្នកហើយ។";
+        await sendTelegramMessage(userId, confirmationMsg);
+        await sendNotificationWithVoice(userId, confirmationMsg);
+      }
+
+      return NextResponse.json({ success: true, message: "Image submitted successfully" });
+    }
+
     const body: PriceSubmission = await request.json();
-    
     const { telegram_user_id, telegram_user_name, location, notes, prices } = body;
-    
+
     if (!prices || prices.length === 0) {
       return NextResponse.json({ error: "No prices provided" }, { status: 400 });
     }

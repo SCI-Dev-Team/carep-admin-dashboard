@@ -1,8 +1,10 @@
- "use client";
- 
+"use client";
+
 import React, { useMemo, useState } from "react";
+import Image from "next/image";
 import { toast } from "react-toastify";
 import { useAuth } from "../layout/AuthContext";
+import { brand } from "@/app/lib/brand";
 
 export default function AnalyticsDashboard() {
   const [username, setUsername] = useState("");
@@ -115,13 +117,10 @@ export default function AnalyticsDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-6">
           <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
             <div className="mb-8 text-center">
-              <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+              <div className="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-4 overflow-hidden bg-white border border-slate-100">
+                <Image src={brand.logo} alt={brand.projectName} width={64} height={64} className="object-contain" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-800">CAREP Admin Dashboard</h2>
-              <p className="text-sm text-slate-500 mt-1">Save the Children Organization</p>
+              <h2 className="text-2xl font-bold text-slate-800">{brand.projectName} Admin Dashboard</h2>
             </div>
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
@@ -179,14 +178,11 @@ export default function AnalyticsDashboard() {
       <div className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm">
         <div className="mx-auto max-w-7xl flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="shrink-0 w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
+            <div className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden bg-white border border-slate-100">
+              <Image src={brand.logo} alt={brand.projectName} width={40} height={40} className="object-contain" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-800">Analytics Dashboard</h1>
-              <p className="text-sm text-slate-500 mt-0.5">CAREP Project - Save the Children</p>
             </div>
           </div>
           <div className="flex items-center gap-3">

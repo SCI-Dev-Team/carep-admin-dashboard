@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Toaster from "./components/ui/Toaster";
+import { brand } from "./lib/brand";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CAREP Admin Dashboard - Save the Children",
-  description: "CAREP Project Admin Dashboard for Analytics and Disease Management - Save the Children Organization",
+  title: `${brand.projectName} Admin Dashboard - ${brand.tagline}`,
+  description: `${brand.projectName} Project Admin Dashboard for Analytics and Disease Management - ${brand.tagline} Organization`,
 };
 
 export default function RootLayout({
@@ -24,9 +25,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         {children}
         <Toaster />

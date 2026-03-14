@@ -38,7 +38,10 @@ export default function EditResponseModal({
   if (!open || !response) return null;
 
   const preview = structuredToMessage(editLocation, editPriceItems, editNotes);
-  const canSave = !editPriceItems.every((i) => !i.vegetable || !i.price);
+  const hasPriceItems = !editPriceItems.every((i) => !i.vegetable || !i.price);
+  const canSave =
+    hasPriceItems ||
+    (response.has_image && (editNotes.trim() !== "" || editLocation.trim() !== ""));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -82,7 +85,24 @@ export default function EditResponseModal({
                 </div>
                 <label className="text-sm font-semibold text-slate-700">Original Submission</label>
               </div>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 h-fit">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 h-fit space-y-3">
+                {response.has_image && (
+                  <div>
+                    <a
+                      href={`/api/notifications/webhook?action=response_image&id=${response.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block rounded-lg overflow-hidden border border-slate-200 bg-white max-w-sm"
+                    >
+                      <img
+                        src={`/api/notifications/webhook?action=response_image&id=${response.id}`}
+                        alt="Price submission"
+                        className="w-full h-auto max-h-64 object-contain"
+                      />
+                    </a>
+                    <p className="text-xs text-slate-500 mt-1">📷 Submitted as image</p>
+                  </div>
+                )}
                 <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{response.message}</p>
               </div>
             </div>

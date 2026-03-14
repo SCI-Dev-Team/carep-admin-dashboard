@@ -81,13 +81,21 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
   const [history, setHistory] = useState<AlertHistory[]>([]);
   const [historyTotal, setHistoryTotal] = useState(0);
-  const [dateFilter, setDateFilter] = useState<'today' | 'all'>('today');
-  // Keys of alerts already sent (init from sessionStorage so it survives refresh)
-  const [sentThisSession, setSentThisSession] = useState<Set<string>>(loadSentKeysFromStorage);
+  const [dateFilter, setDateFilter] = useState<'today' | 'tomorrow' | 'both'>('today');
+  // Keys of alerts already sent. Start empty so server/client match; load from sessionStorage after mount.
+  const [sentThisSession, setSentThisSession] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    setSentThisSession(loadSentKeysFromStorage());
+  }, []);
 
   const todayStr = (() => {
     const d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  })();
+  const tomorrowStr = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   })();
 
   // Normalize date to YYYY-MM-DD (API/DB may return ISO string or date-only)
@@ -97,12 +105,31 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
     return s.slice(0, 10);
   };
 
+  const isTodayOrTomorrow = (dateStr: string) => {
+    const d = toDateOnly(dateStr);
+    return d === todayStr || d === tomorrowStr;
+  };
+
   // Single key format so history and current alerts always match (type + area_id + date)
   const sentKey = (type: string, areaId: number | string, forecastDate: string | undefined) =>
     `${String(type)}-${Number(areaId)}-${toDateOnly(forecastDate)}`;
 
-  const filteredAlerts = dateFilter === 'today' ? alerts.filter((a) => toDateOnly(a.forecast_date) === todayStr) : alerts;
-  const filteredHistory = dateFilter === 'today' ? history.filter((h) => toDateOnly(h.forecast_date) === todayStr) : history;
+  // Only show today and tomorrow; then filter by selected tab
+  const alertsTodayTomorrow = useMemo(() => alerts.filter((a) => isTodayOrTomorrow(a.forecast_date)), [alerts, todayStr, tomorrowStr]);
+  const historyTodayTomorrow = useMemo(() => history.filter((h) => isTodayOrTomorrow(h.forecast_date)), [history, todayStr, tomorrowStr]);
+
+  const filteredAlerts =
+    dateFilter === 'today'
+      ? alertsTodayTomorrow.filter((a) => toDateOnly(a.forecast_date) === todayStr)
+      : dateFilter === 'tomorrow'
+        ? alertsTodayTomorrow.filter((a) => toDateOnly(a.forecast_date) === tomorrowStr)
+        : alertsTodayTomorrow;
+  const filteredHistory =
+    dateFilter === 'today'
+      ? historyTodayTomorrow.filter((h) => toDateOnly(h.forecast_date) === todayStr)
+      : dateFilter === 'tomorrow'
+        ? historyTodayTomorrow.filter((h) => toDateOnly(h.forecast_date) === tomorrowStr)
+        : historyTodayTomorrow;
 
   // Keys of alerts already sent (from history) – show tick and prevent re-sending
   const sentAlertKeys = useMemo(() => {
@@ -116,17 +143,16 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
     return sentAlertKeys.has(key) || sentThisSession.has(key);
   };
 
-  const summaryForDisplay =
-    summary && dateFilter === 'today'
-      ? {
-          total: filteredAlerts.length,
-          high_heat: filteredAlerts.filter((a) => a.type === 'high_heat').length,
-          heavy_rain: filteredAlerts.filter((a) => a.type === 'heavy_rain').length,
-          strong_wind: filteredAlerts.filter((a) => a.type === 'strong_wind').length,
-          fungal_disease_risk: filteredAlerts.filter((a) => a.type === 'fungal_disease_risk').length,
-          air_pollution: filteredAlerts.filter((a) => a.type === 'air_pollution').length,
-        }
-      : summary;
+  const summaryForDisplay = summary
+    ? {
+        total: filteredAlerts.length,
+        high_heat: filteredAlerts.filter((a) => a.type === 'high_heat').length,
+        heavy_rain: filteredAlerts.filter((a) => a.type === 'heavy_rain').length,
+        strong_wind: filteredAlerts.filter((a) => a.type === 'strong_wind').length,
+        fungal_disease_risk: filteredAlerts.filter((a) => a.type === 'fungal_disease_risk').length,
+        air_pollution: filteredAlerts.filter((a) => a.type === 'air_pollution').length,
+      }
+    : null;
   const checkAlerts = useCallback(async () => {
     setLoading(true);
     try {
@@ -331,27 +357,26 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">🔔 Weather Alerts</h1>
-          <p className="text-slate-500 mt-1">
-            Automatic alerts for dangerous weather conditions
-            {checkedAt && (
-              <span className="text-xs ml-2 text-slate-400">
-                Last checked: {formatDateTime(checkedAt)}
-              </span>
+          <h1 className="text-2xl font-bold text-slate-800">Weather Alerts</h1>
+          <p className="text-slate-500 mt-0.5 text-sm">
+            {checkedAt ? (
+              <>Last checked: <span className="text-slate-600 font-medium" suppressHydrationWarning>{formatDateTime(checkedAt)}</span></>
+            ) : (
+              'Check for dangerous weather conditions'
             )}
           </p>
         </div>
         <button
           onClick={checkAlerts}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors disabled:bg-emerald-300"
+          className="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
         >
           {loading ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
           ) : (
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -361,85 +386,91 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
         </button>
       </div>
 
-      {/* Date filter */}
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-sm text-slate-600">Show:</span>
-        <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+      {/* Date filter — today and tomorrow only */}
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="inline-flex rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm">
           <button
             type="button"
             onClick={() => setDateFilter('today')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              dateFilter === 'today' ? 'bg-emerald-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+            className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+              dateFilter === 'today' ? 'bg-emerald-500 text-white' : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
             Today
           </button>
           <button
             type="button"
-            onClick={() => setDateFilter('all')}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-l border-slate-200 ${
-              dateFilter === 'all' ? 'bg-emerald-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+            onClick={() => setDateFilter('tomorrow')}
+            className={`px-4 py-2.5 text-sm font-medium transition-colors border-l border-slate-200 ${
+              dateFilter === 'tomorrow' ? 'bg-emerald-500 text-white' : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
-            All
+            Tomorrow
+          </button>
+          <button
+            type="button"
+            onClick={() => setDateFilter('both')}
+            className={`px-4 py-2.5 text-sm font-medium transition-colors border-l border-slate-200 ${
+              dateFilter === 'both' ? 'bg-emerald-500 text-white' : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            Today & Tomorrow
           </button>
         </div>
-        {dateFilter === 'today' && (
-          <span className="text-xs text-slate-500">({todayStr})</span>
-        )}
+        <span className="text-sm text-slate-500" suppressHydrationWarning>
+          {dateFilter === 'today' && `(${todayStr})`}
+          {dateFilter === 'tomorrow' && `(${tomorrowStr})`}
+          {dateFilter === 'both' && `${todayStr} – ${tomorrowStr}`}
+        </span>
       </div>
 
       {/* Summary Cards */}
       {summaryForDisplay && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
             <div className="text-2xl font-bold text-slate-800">{summaryForDisplay.total}</div>
-            <div className="text-sm text-slate-500">Total Alerts</div>
+            <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mt-0.5">Total</div>
           </div>
-          <div className="bg-red-50 rounded-lg border border-red-200 p-4">
-            <div className="text-2xl font-bold text-red-700">{summaryForDisplay.high_heat}</div>
-            <div className="text-sm text-red-600">🌡️ High Heat</div>
+          <div className="bg-red-50/80 rounded-xl border border-red-100 p-4 shadow-sm">
+            <div className="text-xl font-bold text-red-700">{summaryForDisplay.high_heat}</div>
+            <div className="text-xs font-medium text-red-600 mt-0.5">High heat</div>
           </div>
-          <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
-            <div className="text-2xl font-bold text-blue-700">{summaryForDisplay.heavy_rain}</div>
-            <div className="text-sm text-blue-600">🌧️ Heavy Rain</div>
+          <div className="bg-blue-50/80 rounded-xl border border-blue-100 p-4 shadow-sm">
+            <div className="text-xl font-bold text-blue-700">{summaryForDisplay.heavy_rain}</div>
+            <div className="text-xs font-medium text-blue-600 mt-0.5">Heavy rain</div>
           </div>
-          <div className="bg-cyan-50 rounded-lg border border-cyan-200 p-4">
-            <div className="text-2xl font-bold text-cyan-700">{summaryForDisplay.strong_wind}</div>
-            <div className="text-sm text-cyan-600">💨 Strong Wind</div>
+          <div className="bg-cyan-50/80 rounded-xl border border-cyan-100 p-4 shadow-sm">
+            <div className="text-xl font-bold text-cyan-700">{summaryForDisplay.strong_wind}</div>
+            <div className="text-xs font-medium text-cyan-600 mt-0.5">Strong wind</div>
           </div>
-          <div className="bg-amber-50 rounded-lg border border-amber-200 p-4">
-            <div className="text-2xl font-bold text-amber-700">{summaryForDisplay.fungal_disease_risk}</div>
-            <div className="text-sm text-amber-600">🍄 Fungal Risk</div>
+          <div className="bg-amber-50/80 rounded-xl border border-amber-100 p-4 shadow-sm">
+            <div className="text-xl font-bold text-amber-700">{summaryForDisplay.fungal_disease_risk}</div>
+            <div className="text-xs font-medium text-amber-600 mt-0.5">Fungal risk</div>
           </div>
-          <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
-            <div className="text-2xl font-bold text-purple-700">{summaryForDisplay.air_pollution}</div>
-            <div className="text-sm text-purple-600">😷 Air Pollution</div>
+          <div className="bg-purple-50/80 rounded-xl border border-purple-100 p-4 shadow-sm">
+            <div className="text-xl font-bold text-purple-700">{summaryForDisplay.air_pollution}</div>
+            <div className="text-xs font-medium text-purple-600 mt-0.5">Air pollution</div>
           </div>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-slate-200">
+      <div className="flex gap-1 p-1 bg-slate-100 rounded-xl w-fit mb-6">
         <button
           onClick={() => setActiveTab('current')}
-          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-            activeTab === 'current'
-              ? 'border-emerald-500 text-emerald-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+          className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === 'current' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-800'
           }`}
         >
-          Current Alerts ({filteredAlerts.length})
+          Current ({filteredAlerts.length})
         </button>
         <button
           onClick={() => setActiveTab('history')}
-          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-            activeTab === 'history'
-              ? 'border-emerald-500 text-emerald-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+          className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === 'history' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-800'
           }`}
         >
-          Sent History ({dateFilter === 'today' ? filteredHistory.length : historyTotal})
+          History ({dateFilter === 'today' ? filteredHistory.length : historyTotal})
         </button>
       </div>
 
@@ -447,38 +478,33 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
         <>
           {/* Send Controls */}
           {filteredAlerts.length > 0 && (
-            <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 mb-6">
-              <p className="text-sm text-slate-600 mb-3">
-                Each alert is sent only to users whose <strong>location</strong> matches that alert&apos;s province (e.g. Stung Treng alert → only users in Stung Treng).
+            <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 mb-6">
+              <p className="text-sm text-slate-600 mb-4">
+                Alerts are sent only to users whose <strong>location</strong> matches the alert province.
               </p>
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={selectAll}
-                  className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 rounded text-sm font-medium transition-colors"
+                  className="px-3 py-2 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-sm font-medium text-slate-700 transition-colors"
                 >
-                  {selectedAlerts.size === filteredAlerts.length ? 'Deselect All' : 'Select All'}
+                  {selectedAlerts.size === sendableAlerts.length && sendableAlerts.length > 0 ? 'Deselect all' : 'Select all'}
                 </button>
-
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-slate-600">Pool:</label>
-                  <select
-                    value={targetUsers}
-                    onChange={(e) => setTargetUsers(e.target.value as 'all' | 'farmer_leads')}
-                    className="px-3 py-1.5 bg-white border border-slate-300 rounded text-sm"
-                  >
-                    <option value="all">All users (then filter by province per alert)</option>
-                    <option value="farmer_leads">Farmer leads only (then filter by province per alert)</option>
-                  </select>
-                </div>
-
+                <select
+                  value={targetUsers}
+                  onChange={(e) => setTargetUsers(e.target.value as 'all' | 'farmer_leads')}
+                  className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700"
+                >
+                  <option value="all">All users (by province)</option>
+                  <option value="farmer_leads">Farmer leads only (by province)</option>
+                </select>
                 <button
                   onClick={sendSelectedAlerts}
                   disabled={selectedAlerts.size === 0 || sending}
-                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
                 >
                   {sending ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                       Sending...
                     </>
                   ) : (
@@ -486,168 +512,158 @@ export default function WeatherAlerts({ onClose }: WeatherAlertsProps) {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                       </svg>
-                      Send {selectedAlerts.size} Alert{selectedAlerts.size !== 1 ? 's' : ''}
+                      Send {selectedAlerts.size} alert{selectedAlerts.size !== 1 ? 's' : ''}
                     </>
                   )}
                 </button>
-
-                <span className="text-sm text-slate-500">
-                  {selectedAlerts.size} selected
-                </span>
+                <span className="text-sm text-slate-500">{selectedAlerts.size} selected</span>
               </div>
             </div>
           )}
 
-          {/* Alerts List */}
+          {/* Current Alerts Table */}
           {filteredAlerts.length === 0 ? (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
-              <div className="text-4xl mb-3">✅</div>
-              <h3 className="text-lg font-semibold text-green-800">No Active Alerts</h3>
-              <p className="text-green-600 mt-1">
+            <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
+              <div className="text-5xl mb-3">✅</div>
+              <h3 className="text-lg font-semibold text-slate-800">No active alerts</h3>
+              <p className="text-slate-500 mt-1 text-sm" suppressHydrationWarning>
                 {dateFilter === 'today'
                   ? `No weather alerts for today (${todayStr}).`
                   : 'Weather conditions are normal across all provinces.'}
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {filteredAlerts.map((alert) => {
-                const sent = isAlertSent(alert);
-                return (
-                <div
-                  key={alert.id}
-                  className={`rounded-lg border p-4 transition-all ${
-                    sent
-                      ? 'opacity-85 cursor-default ' + getSeverityColor(alert.severity)
-                      : selectedAlerts.has(alert.id)
-                        ? 'ring-2 ring-emerald-500 cursor-pointer ' + getSeverityColor(alert.severity)
-                        : 'cursor-pointer ' + getSeverityColor(alert.severity)
-                  }`}
-                  onClick={() => !sent && toggleAlertSelection(alert)}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={!sent && selectedAlerts.has(alert.id)}
-                        disabled={sent}
-                        readOnly={sent}
-                        onChange={() => !sent && toggleAlertSelection(alert)}
-                        onClick={(e) => { e.stopPropagation(); sent && e.preventDefault(); }}
-                        className="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={sent ? { pointerEvents: 'none', cursor: 'default' } : undefined}
-                      />
-                      <span className="text-3xl">{getAlertIcon(alert.type)}</span>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getSeverityBadge(alert.severity)}`}>
-                            {alert.severity.toUpperCase()}
-                          </span>
-                          <h3 className="font-bold">{alert.title_kh}</h3>
-                        </div>
-                        {sent && (
-                          <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-300">
-                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Sent
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm opacity-80">{alert.title_en}</p>
-                      
-                      <div className="mt-2 flex flex-wrap gap-3 text-sm">
-                        <span className="flex items-center gap-1">
-                          📍 {alert.province_kh} / {alert.province_en}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          📅 {alert.forecast_date}
-                        </span>
-                        {alert.value != null && alert.value !== '' && (
-                          <span className="flex items-center gap-1 font-mono bg-black/10 px-2 rounded">
-                            {formatAlertValue(alert)}
-                          </span>
-                        )}
-                      </div>
-                      
-                      <p className="mt-2 text-sm">{alert.message_kh}</p>
-                    </div>
-                  </div>
-                </div>
-              );
-              })}
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px]">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="w-12 px-4 py-3.5 text-left">
+                        <span className="sr-only">Select</span>
+                      </th>
+                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
+                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Province</th>
+                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
+                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Value</th>
+                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Message</th>
+                      <th className="w-24 px-4 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredAlerts.map((alert) => {
+                      const sent = isAlertSent(alert);
+                      const selected = selectedAlerts.has(alert.id);
+                      return (
+                        <tr
+                          key={alert.id}
+                          onClick={() => !sent && toggleAlertSelection(alert)}
+                          className={`transition-colors ${
+                            sent
+                              ? 'bg-slate-50/50 ' + getSeverityColor(alert.severity)
+                              : selected
+                                ? 'bg-emerald-50/70 ring-inset ' + getSeverityColor(alert.severity)
+                                : 'hover:bg-slate-50/80 ' + getSeverityColor(alert.severity)
+                          } ${!sent ? 'cursor-pointer' : ''}`}
+                        >
+                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={!sent && selected}
+                              disabled={sent}
+                              readOnly={sent}
+                              onChange={() => !sent && toggleAlertSelection(alert)}
+                              className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">{getAlertIcon(alert.type)}</span>
+                              <div>
+                                <div className="font-medium text-slate-800">{alert.title_kh}</div>
+                                <span className={`inline-block mt-0.5 px-1.5 py-0.5 rounded text-xs font-medium ${getSeverityBadge(alert.severity)}`}>
+                                  {alert.severity}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-700">{alert.province_kh}</td>
+                          <td className="px-4 py-3 text-sm text-slate-600">{alert.forecast_date}</td>
+                          <td className="px-4 py-3">
+                            {alert.value != null && alert.value !== '' ? (
+                              <span className="text-sm font-mono bg-slate-100 px-2 py-1 rounded">{formatAlertValue(alert)}</span>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-600 max-w-[200px] truncate" title={alert.message_kh}>
+                            {alert.message_kh}
+                          </td>
+                          <td className="px-4 py-3">
+                            {sent ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                Sent
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 text-xs">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </>
       )}
 
       {activeTab === 'history' && (
-        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           {filteredHistory.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">
+            <div className="p-12 text-center text-slate-500 text-sm" suppressHydrationWarning>
               {dateFilter === 'today' ? `No alerts sent today (${todayStr}).` : 'No alert history yet. Sent alerts will appear here.'}
             </div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Type</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Province</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Value</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Users Notified</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Sent At</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredHistory.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span>{getAlertIcon(item.alert_type)}</span>
-                        <span className="text-sm font-medium">{item.title_en || item.alert_type}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {item.province_kh || item.province_en}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-mono">{formatHistoryValue(item.alert_type, item.value)}</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-sm">
-                        {item.users_notified} users
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      {formatDateTime(item.sent_at)}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px]">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Province</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Value</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Users notified</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Sent at</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredHistory.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{getAlertIcon(item.alert_type)}</span>
+                          <span className="text-sm font-medium text-slate-800">{item.title_kh || item.title_en || item.alert_type}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 text-sm text-slate-700">{item.province_kh || item.province_en}</td>
+                      <td className="px-4 py-3.5 text-sm font-mono text-slate-600">{formatHistoryValue(item.alert_type, item.value) || '—'}</td>
+                      <td className="px-4 py-3.5">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium border border-emerald-100">
+                          {item.users_notified}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-sm text-slate-500">{formatDateTime(item.sent_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-      )}
-
-      {/* Auto-Check Info */}
-      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-semibold text-blue-800 mb-2">🤖 Automatic Alert System</h3>
-        <div className="text-sm text-blue-700 space-y-1">
-          <p>To enable automatic notifications, set up a cron job to call:</p>
-          <code className="block bg-blue-100 p-2 rounded mt-2 font-mono text-xs">
-            PUT /api/weather/alerts?auto_send=true&target=all
-          </code>
-          <p className="mt-2">Thresholds:</p>
-          <ul className="list-disc list-inside ml-2 text-xs space-y-0.5">
-            <li>High Heat: Temperature ≥ 35°C</li>
-            <li>Heavy Rain: Weather conditions indicate rain/storm</li>
-            <li>Strong Wind: Wind speed ≥ 30 km/h</li>
-            <li>Fungal Risk: Humidity ≥ 85% AND Temperature ≥ 30°C</li>
-            <li>Air Pollution: CO ≥ 2000 OR SO2 ≥ 40</li>
-          </ul>
-        </div>
-      </div>
+      )}    
     </div>
   );
 }

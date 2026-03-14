@@ -68,7 +68,7 @@ export default function NotificationHistoryTab({
                 <tr key={notification.id} className="hover:bg-slate-50">
                   <td className="px-5 py-4 text-sm text-slate-800">#{notification.user_id}</td>
                   <td className="px-5 py-4 text-sm text-slate-600 max-w-md truncate">{notification.message}</td>
-                  <td className="px-5 py-4 text-sm text-slate-500">{formatNotificationDate(notification.sent_at)}</td>
+                  <td className="px-5 py-4 text-sm text-slate-500" suppressHydrationWarning>{formatNotificationDate(notification.sent_at)}</td>
                   <td className="px-5 py-4">
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded-full ${

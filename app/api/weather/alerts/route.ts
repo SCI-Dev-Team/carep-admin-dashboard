@@ -76,46 +76,49 @@ const THRESHOLDS = {
 const ALERT_TYPES = {
   HIGH_HEAT: {
     type: 'high_heat',
-    title_en: '🌡️ High Heat Risk',
-    title_kh: '🌡️ ការព្រមានកម្ដៅខ្ពស់',
-    message_en: 'Temperature is very high. Stay hydrated and avoid prolonged sun exposure.',
-    message_kh: 'សីតុណ្ហភាពខ្ពស់ខ្លាំង។ សូមផឹកទឹកឱ្យបានគ្រប់គ្រាន់ និងជៀសវាងការប៉ះពាល់កម្ដៅថ្ងៃយូរ។',
+    title_en: '🌡️ High Temperature Advisory',
+    title_kh: '🌡️ សេចក្ដីជូនដំណឹងអំពីសីតុណ្ហភាពខ្ពស់',
+    message_en: 'Extremely high temperatures are expected. Please ensure adequate hydration and minimize prolonged exposure to direct sunlight.',
+    message_kh: 'រំពឹងថានឹងមានសីតុណ្ហភាពខ្ពស់ខ្លាំង។ សូមពិកសាទឹកឱ្យបានគ្រប់គ្រាន់ និងកាត់បន្ថយការប៉ះពាល់កម្ដៅថ្ងៃដោយផ្ទាល់ក្នុងរយៈពេលយូរ។',
     severity: 'warning',
   },
+
   HEAVY_RAIN: {
     type: 'heavy_rain',
-    title_en: '🌧️ Heavy Rain Warning',
-    title_kh: '🌧️ ការព្រមានភ្លៀងធ្លាក់ខ្លាំង',
-    message_en: 'Heavy rain expected. Protect crops and avoid flooded areas.',
-    message_kh: 'រំពឹងថានឹងមានភ្លៀងធ្លាក់ខ្លាំង។ សូមការពារដំណាំ និងជៀសវាងតំបន់ជន់លិច។',
+    title_en: '🌧️ Heavy Rainfall Advisory',
+    title_kh: '🌧️ សេចក្ដីជូនដំណឹងអំពីភ្លៀងធ្លាក់ខ្លាំង',
+    message_en: 'Significant rainfall is anticipated. Please take appropriate measures to protect crops and avoid areas prone to flooding.',
+    message_kh: 'រំពឹងថានឹងមានភ្លៀងធ្លាក់ខ្លាំង។ សូមចាត់វិធានការសមស្របដើម្បីការពារដំណាំ និងជៀសវាងតំបន់ដែលមានហានិភ័យជន់លិច។',
     severity: 'danger',
   },
+
   STRONG_WIND: {
     type: 'strong_wind',
-    title_en: '💨 Strong Wind Warning',
-    title_kh: '💨 ការព្រមានខ្យល់បក់ខ្លាំង',
-    message_en: 'Strong winds expected. Secure loose items and protect fragile crops.',
-    message_kh: 'រំពឹងថានឹងមានខ្យល់បក់ខ្លាំង។ សូមរំលាស់វត្ថុផ្សេងៗ និងការពារដំណាំ។',
+    title_en: '💨 Strong Wind Advisory',
+    title_kh: '💨 សេចក្ដីជូនដំណឹងអំពីខ្យល់បក់ខ្លាំង',
+    message_en: 'Strong wind conditions are expected. Please secure loose objects and take necessary precautions to protect vulnerable crops.',
+    message_kh: 'រំពឹងថានឹងមានខ្យល់បក់ខ្លាំង។ សូមរៀបចំទុកវត្ថុដែលអាចរលុង និងចាត់វិធានការការពារដំណាំដែលងាយរងគ្រោះ។',
     severity: 'warning',
   },
+
   FUNGAL_DISEASE_RISK: {
     type: 'fungal_disease_risk',
-    title_en: '🍄 High Fungal Disease Risk',
-    title_kh: '🍄 ការព្រមានហានិភ័យជំងឺផ្សិត',
-    message_en: 'High humidity and temperature create ideal conditions for fungal diseases. Monitor crops closely.',
-    message_kh: 'សំណើម និងសីតុណ្ហភាពខ្ពស់បង្កើតលក្ខខណ្ឌល្អសម្រាប់ជំងឺផ្សិត។ សូមតាមដានដំណាំឱ្យបានជិតស្និទ្ធ។',
+    title_en: '🍄 Elevated Risk of Fungal Disease',
+    title_kh: '🍄 សេចក្ដីជូនដំណឹងអំពីហានិភ័យជំងឺផ្សិតខ្ពស់',
+    message_en: 'Current humidity and temperature levels may create favorable conditions for fungal diseases. Regular crop monitoring is strongly recommended.',
+    message_kh: 'កម្រិតសំណើម និងសីតុណ្ហភាពបច្ចុប្បន្នអាចបង្កើតលក្ខខណ្ឌសមស្របសម្រាប់ជំងឺផ្សិត។ សូមត្រួតពិនិត្យដំណាំជាប្រចាំ។',
     severity: 'warning',
   },
+
   AIR_POLLUTION: {
     type: 'air_pollution',
-    title_en: '😷 Air Pollution Risk',
-    title_kh: '😷 ការព្រមានការបំពុលខ្យល់',
-    message_en: 'Air quality is poor. Limit outdoor activities and wear masks if necessary.',
-    message_kh: 'គុណភាពខ្យល់មិនល្អ។ សូមកាត់បន្ថយសកម្មភាពក្រៅផ្ទះ និងពាក់ម៉ាសវេជ្ជសាស្ត្រប្រសិនបើចាំបាច់។',
+    title_en: '😷 Air Quality Advisory',
+    title_kh: '😷 សេចក្ដីជូនដំណឹងអំពីគុណភាពខ្យល់',
+    message_en: 'Air quality levels are currently poor. It is advised to limit outdoor activities and use protective masks when necessary.',
+    message_kh: 'គុណភាពខ្យល់បច្ចុប្បន្នមិនល្អ។ សូមកាត់បន្ថយសកម្មភាពក្រៅផ្ទះ និងពាក់ម៉ាសការពារប្រសិនបើចាំបាច់។',
     severity: 'danger',
   },
 };
-
 interface WeatherData {
   area_id: number;
   temperature: string | number;
@@ -150,6 +153,30 @@ interface Alert {
   value?: number | string;
   threshold?: number | string;
   created_at: string;
+}
+
+// Format alert value with measurement unit in Khmer (Celsius = អង្សាសេ) for user-facing message
+function formatAlertValueKhmer(alert: Alert): string {
+  const v = alert.value;
+  const type = alert.type;
+  if (type === 'high_heat') {
+    const num = typeof v === 'number' ? v : parseFloat(String(v));
+    return Number.isFinite(num) ? `${num} អង្សាសេ` : String(v ?? '');
+  }
+  if (type === 'strong_wind') {
+    const num = typeof v === 'number' ? v : parseFloat(String(v));
+    return Number.isFinite(num) ? `${num} គ.ម/ម៉ោង` : String(v ?? '');
+  }
+  if (type === 'fungal_disease_risk') {
+    const s = String(v ?? '');
+    return s
+      .replace(/Humidity:\s*/gi, 'សំណើម: ')
+      .replace(/Temp:\s*(\d+(?:\.\d+)?)\s*°C/gi, (_, t) => `សីតុណ្ហភាព: ${t} អង្សាសេ`);
+  }
+  if (type === 'air_pollution') {
+    return (String(v ?? '')).replace(/µg\/m³/g, 'មីក្រូក្រាម/ម³');
+  }
+  return String(v ?? '');
 }
 
 // Check weather conditions and generate alerts
@@ -524,13 +551,13 @@ export async function POST(request: Request) {
         // Only send this alert to users in this alert's province
         const usersInProvince = users.filter((u: any) => userIsInProvince(u, alert.province_en, alert.province_kh));
 
-        // Format message with bilingual content
-        const message = `<b>${alert.title_kh}</b>\n${alert.title_en}\n\n` +
-          `📍 ${alert.province_kh} / ${alert.province_en}\n` +
+        // Format message in Khmer only (value with unit in Khmer, e.g. Celsius = អង្សាសេ)
+        const valueKhmer = formatAlertValueKhmer(alert);
+        const message = `<b>${alert.title_kh}</b>\n\n` +
+          `📍 ${alert.province_kh}\n` +
           `📅 ${alert.forecast_date}\n\n` +
           `${alert.message_kh}\n\n` +
-          `${alert.message_en}\n\n` +
-          `⚠️ ${alert.value}`;
+          `⚠️ ${valueKhmer}`;
 
         // TTS once per alert, then send text + voice to each user
         const voiceBuffer = await textToSpeech(stripHtmlForTTS(message));

@@ -74,37 +74,25 @@ const UNITS = [
   { value: "piece", label: "ក្នុង១ដុំ" },
 ];
 
-// Cambodia provinces (Khmer)
+// Cambodia provinces (Khmer) — limited list
 const PROVINCES = [
   { value: "", label: "ជ្រើសរើសខេត្ត/ក្រុង" },
-  { value: "ភ្នំពេញ", label: "ភ្នំពេញ" },
-  { value: "បន្ទាយមានជ័យ", label: "បន្ទាយមានជ័យ" },
-  { value: "បាត់ដំបង", label: "បាត់ដំបង" },
-  { value: "កំពង់ចាម", label: "កំពង់ចាម" },
-  { value: "កំពង់ឆ្នាំង", label: "កំពង់ឆ្នាំង" },
-  { value: "កំពង់ស្ពឺ", label: "កំពង់ស្ពឺ" },
-  { value: "កំពង់ធំ", label: "កំពង់ធំ" },
   { value: "កំពត", label: "កំពត" },
-  { value: "កណ្តាល", label: "កណ្តាល" },
-  { value: "កោះកុង", label: "កោះកុង" },
-  { value: "ក្រចេះ", label: "ក្រចេះ" },
-  { value: "មណ្ឌលគិរី", label: "មណ្ឌលគិរី" },
-  { value: "ឧត្តរមានជ័យ", label: "ឧត្តរមានជ័យ" },
-  { value: "ប៉ៃលិន", label: "ប៉ៃលិន" },
-  { value: "ព្រះសីហនុ", label: "ព្រះសីហនុ" },
-  { value: "ព្រះវិហារ", label: "ព្រះវិហារ" },
-  { value: "ពោធិ៍សាត់", label: "ពោធិ៍សាត់" },
-  { value: "ព្រៃវែង", label: "ព្រៃវែង" },
-  { value: "រតនគិរី", label: "រតនគិរី" },
-  { value: "សៀមរាប", label: "សៀមរាប" },
-  { value: "ស្ទឹងត្រែង", label: "ស្ទឹងត្រែង" },
-  { value: "ស្វាយរៀង", label: "ស្វាយរៀង" },
-  { value: "តាកែវ", label: "តាកែវ" },
-  { value: "ត្បូងឃ្មុំ", label: "ត្បូងឃ្មុំ" },
   { value: "កែប", label: "កែប" },
+  { value: "សៀមរាប", label: "សៀមរាប" },
+  { value: "បន្ទាយមានជ័យ", label: "បន្ទាយមានជ័យ" },
+  { value: "ឧត្តរមានជ័យ", label: "ឧត្តរមានជ័យ" },
+  { value: "ភ្នំពេញ", label: "ភ្នំពេញ" },
+  { value: "កោះកុង", label: "កោះកុង" },
+  { value: "បាត់ដំបង", label: "បាត់ដំបង" },
+  { value: "ស្ទឹងត្រែង", label: "ស្ទឹងត្រែង" },
+  { value: "មណ្ឌលគិរី", label: "មណ្ឌលគិរី" },
 ];
 
+type SubmitMode = "choice" | "form" | "image";
+
 export default function TelegramWebApp() {
+  const [mode, setMode] = useState<SubmitMode>("choice");
   const [prices, setPrices] = useState<VegetablePrice[]>([]);
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
@@ -113,6 +101,9 @@ export default function TelegramWebApp() {
   const [telegramUser, setTelegramUser] = useState<{ id: number; name: string } | null>(null);
   const [isDark, setIsDark] = useState(false);
   const [isTelegramWebApp, setIsTelegramWebApp] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageCaption, setImageCaption] = useState("");
+  const [imageProvince, setImageProvince] = useState("");
 
   useEffect(() => {
     // Initialize Telegram WebApp
@@ -148,21 +139,23 @@ export default function TelegramWebApp() {
     const tg = window.Telegram?.WebApp;
     if (!tg) return;
 
-    // Show/hide main button based on whether there are prices
-    if (prices.length > 0) {
+    if (mode === "form" && prices.length > 0) {
+      tg.MainButton.show();
+      tg.MainButton.enable();
+    } else if (mode === "image" && imageFile && imageProvince) {
       tg.MainButton.show();
       tg.MainButton.enable();
     } else {
       tg.MainButton.hide();
     }
 
-    const handleSubmit = () => submitPrices();
-    tg.MainButton.onClick(handleSubmit);
-
-    return () => {
-      tg.MainButton.offClick(handleSubmit);
+    const handleSubmit = () => {
+      if (mode === "image") submitImage();
+      else submitPrices();
     };
-  }, [prices, location, notes]);
+    tg.MainButton.onClick(handleSubmit);
+    return () => tg.MainButton.offClick(handleSubmit);
+  }, [mode, prices, location, notes, imageFile, imageProvince]);
 
   function addVegetable(vegName: string) {
     if (prices.find((p) => p.name === vegName)) return;
@@ -185,14 +178,9 @@ export default function TelegramWebApp() {
       toast.error("សូមបញ្ចូលតម្លៃយ៉ាងតិចមួយ");
       return;
     }
-
     setIsSubmitting(true);
-
     const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.MainButton.showProgress();
-    }
-
+    if (tg) tg.MainButton.showProgress();
     try {
       const response = await fetch("/api/notifications/webapp", {
         method: "POST",
@@ -206,28 +194,50 @@ export default function TelegramWebApp() {
           init_data: window.Telegram?.WebApp?.initData,
         }),
       });
-
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "ដាក់ស្នើមិនបានជោគជ័យ");
-      }
-
+      if (!response.ok) throw new Error(result.error || "ដាក់ស្នើមិនបានជោគជ័យ");
       setSubmitted(true);
-
-      // Close the WebApp after a short delay
-      setTimeout(() => {
-        if (tg) {
-          tg.close();
-        }
-      }, 2000);
+      setTimeout(() => tg?.close(), 2000);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "ដាក់ស្នើតម្លៃមិនបានជោគជ័យ");
     } finally {
       setIsSubmitting(false);
-      if (tg) {
-        tg.MainButton.hideProgress();
-      }
+      tg?.MainButton.hideProgress();
+    }
+  }
+
+  async function submitImage() {
+    if (!imageFile) {
+      toast.error("សូមជ្រើសរើសរូបថត");
+      return;
+    }
+    if (!imageProvince) {
+      toast.error("សូមជ្រើសរើសខេត្ត/ក្រុង");
+      return;
+    }
+    setIsSubmitting(true);
+    const tg = window.Telegram?.WebApp;
+    if (tg) tg.MainButton.showProgress();
+    try {
+      const formData = new FormData();
+      formData.append("image", imageFile);
+      formData.append("location", imageProvince);
+      if (telegramUser?.id) formData.append("telegram_user_id", String(telegramUser.id));
+      if (telegramUser?.name) formData.append("telegram_user_name", telegramUser.name);
+      if (imageCaption.trim()) formData.append("caption", imageCaption.trim());
+      const response = await fetch("/api/notifications/webapp", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "ដាក់ស្នើរូបមិនបានជោគជ័យ");
+      setSubmitted(true);
+      setTimeout(() => tg?.close(), 2000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "ដាក់ស្នើរូបមិនបានជោគជ័យ");
+    } finally {
+      setIsSubmitting(false);
+      tg?.MainButton.hideProgress();
     }
   }
 
@@ -254,14 +264,144 @@ export default function TelegramWebApp() {
     );
   }
 
+  // Choice screen: upload image or fill form
+  if (mode === "choice") {
+    return (
+      <div className={`min-h-screen ${bgColor} pb-8`}>
+        <div className={`${cardColor} border-b ${borderColor} px-4 py-4`}>
+          <h1 className={`text-lg font-bold ${textColor}`}>ដាក់ស្នើតម្លៃអាហារបន្លៃ</h1>
+          <p className={`text-sm ${textMuted}`}>
+            {telegramUser ? `សួស្តី ${telegramUser.name}!` : "ជ្រើសរើសរបៀបដាក់ស្នើតម្លៃ"}
+          </p>
+        </div>
+        <div className="p-4 space-y-3">
+          <button
+            type="button"
+            onClick={() => setMode("image")}
+            className={`w-full ${cardColor} rounded-xl p-5 border ${borderColor} flex items-center gap-4 text-left hover:opacity-95 active:scale-[0.99] transition-all`}
+          >
+            <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+              <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className={`font-semibold ${textColor}`}>ផ្ញើរូបថតតម្លៃ</h2>
+              <p className={`text-sm ${textMuted}`}>ថតរូបថតតម្លៃរបស់អ្នក ឬរូបថតពីផ្សារ</p>
+            </div>
+            <svg className={`w-5 h-5 ${textMuted}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("form")}
+            className={`w-full ${cardColor} rounded-xl p-5 border ${borderColor} flex items-center gap-4 text-left hover:opacity-95 active:scale-[0.99] transition-all`}
+          >
+            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className={`font-semibold ${textColor}`}>បញ្ចូលតម្លៃដោយដៃ</h2>
+              <p className={`text-sm ${textMuted}`}>ជ្រើសរើសអាហារបន្លៃ និងបញ្ចូលតម្លៃតាមទម្រង់</p>
+            </div>
+            <svg className={`w-5 h-5 ${textMuted}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Image upload screen
+  if (mode === "image") {
+    return (
+      <div className={`min-h-screen ${bgColor} pb-24`}>
+        <div className={`${cardColor} border-b ${borderColor} px-4 py-4 sticky top-0 z-10 flex items-center gap-3`}>
+          <button type="button" onClick={() => { setMode("choice"); setImageFile(null); setImageCaption(""); setImageProvince(""); }} className="p-2 -ml-2 rounded-lg hover:bg-black/5">
+            <svg className={`w-5 h-5 ${textColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div>
+            <h1 className={`text-lg font-bold ${textColor}`}>ផ្ញើរូបថតតម្លៃ</h1>
+            <p className={`text-sm ${textMuted}`}>ថតឬជ្រើសរូបថតពីហ្គាឡារី</p>
+          </div>
+        </div>
+        <div className="p-4 space-y-4">
+          <div className={`${cardColor} rounded-xl p-4 border ${borderColor}`}>
+            <label className={`block text-sm font-medium ${textColor} mb-2`}>ខេត្ត / ក្រុង (ចាំបាច់)</label>
+            <select
+              value={imageProvince}
+              onChange={(e) => setImageProvince(e.target.value)}
+              className={`w-full px-3 py-2.5 ${inputBg} border ${borderColor} rounded-lg text-sm ${textColor}`}
+            >
+              {PROVINCES.map((p) => (
+                <option key={p.value || "empty"} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+            <p className={`text-xs ${textMuted} mt-1`}>ជ្រើសរើសខេត្ត/ក្រុងដែលរូបថតតម្លៃមកពី</p>
+          </div>
+          <div className={`${cardColor} rounded-xl p-4 border ${borderColor}`}>
+            <label className={`block text-sm font-medium ${textColor} mb-2`}>រូបថតតម្លៃ</label>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+              className="block w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-emerald-50 file:text-emerald-700"
+            />
+            {imageFile && (
+              <p className={`text-sm ${textMuted} mt-2`}>
+                ជ្រើសរើសហើយ: {imageFile.name}
+              </p>
+            )}
+          </div>
+          <div className={`${cardColor} rounded-xl p-4 border ${borderColor}`}>
+            <label className={`block text-sm font-medium ${textColor} mb-2`}>កំណត់សម្គាល់ (ជម្រើស)</label>
+            <textarea
+              value={imageCaption}
+              onChange={(e) => setImageCaption(e.target.value)}
+              placeholder="ព័ត៌មានបន្ថែម..."
+              rows={2}
+              className={`w-full px-3 py-2.5 ${inputBg} border ${borderColor} rounded-lg text-sm ${textColor} resize-none`}
+            />
+          </div>
+          {!isTelegramWebApp && imageFile && (
+            <button
+              type="button"
+              onClick={submitImage}
+              disabled={isSubmitting}
+              className="w-full py-3 bg-emerald-500 text-white font-medium rounded-xl hover:bg-emerald-600 disabled:opacity-50"
+            >
+              {isSubmitting ? "កំពុងដាក់ស្នើ..." : "ដាក់ស្នើរូបថត"}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen ${bgColor} pb-24`}>
       {/* Header */}
-      <div className={`${cardColor} border-b ${borderColor} px-4 py-4 sticky top-0 z-10`}>
-        <h1 className={`text-lg font-bold ${textColor}`}>ដាក់ស្នើតម្លៃអាហារបន្លៃ</h1>
-        <p className={`text-sm ${textMuted}`}>
-          {telegramUser ? `សួស្តី ${telegramUser.name}!` : "ចែករំលែកតម្លៃផ្សារថ្ងៃនេះ"}
-        </p>
+      <div className={`${cardColor} border-b ${borderColor} px-4 py-4 sticky top-0 z-10 flex items-center gap-3`}>
+        <button type="button" onClick={() => setMode("choice")} className="p-2 -ml-2 rounded-lg hover:bg-black/5">
+          <svg className={`w-5 h-5 ${textColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div>
+          <h1 className={`text-lg font-bold ${textColor}`}>ដាក់ស្នើតម្លៃអាហារបន្លៃ</h1>
+          <p className={`text-sm ${textMuted}`}>
+            {telegramUser ? `សួស្តី ${telegramUser.name}!` : "បញ្ចូលតម្លៃតាមទម្រង់"}
+          </p>
+        </div>
       </div>
 
       <div className="p-4 space-y-4">

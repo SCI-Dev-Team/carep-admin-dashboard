@@ -91,7 +91,7 @@ export default function ComposeMessage({
           />
           <label htmlFor="includePriceForm" className="flex-1 cursor-pointer">
             <span className="text-sm font-medium text-emerald-800">Include Price Input Form</span>
-            <p className="text-xs text-emerald-600">Adds a button for farmers to submit prices through an interactive form</p>
+            <p className="text-xs text-emerald-600">In the mini app, farmers can upload a photo of prices or fill the form manually</p>
           </label>
         </div>
         <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">

@@ -83,7 +83,7 @@ export default function ResponseCard({
                     {response.approval_status === "approved" ? "Approved" : response.approval_status === "rejected" ? "Rejected" : "Pending"}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-400 mt-0.5" suppressHydrationWarning>
                   Telegram ID: {response.telegram_user_id} • {formatNotificationDate(response.received_at)}
                 </p>
               </div>
@@ -93,6 +93,23 @@ export default function ResponseCard({
                 response.edited_message ? "bg-gradient-to-br from-blue-50 to-emerald-50 border border-blue-100" : "bg-slate-50 border border-slate-100"
               }`}
             >
+              {response.has_image && (
+                <div className="mb-3">
+                  <a
+                    href={`/api/notifications/webhook?action=response_image&id=${response.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block rounded-lg overflow-hidden border border-slate-200 bg-slate-100 max-w-xs"
+                  >
+                    <img
+                      src={`/api/notifications/webhook?action=response_image&id=${response.id}`}
+                      alt="Price submission"
+                      className="w-full h-auto max-h-48 object-contain"
+                    />
+                  </a>
+                  <p className="text-xs text-slate-500 mt-1">📷 Sent as image</p>
+                </div>
+              )}
               {response.edited_message ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-xs font-medium text-emerald-600">
@@ -166,7 +183,7 @@ export default function ResponseCard({
                       </svg>
                     )}
                     <span className="font-medium">{response.approval_status === "approved" ? "Approved" : "Rejected"}</span>
-                    {response.approved_at && <span className="text-xs opacity-75">• {formatNotificationDate(response.approved_at)}</span>}
+                    {response.approved_at && <span className="text-xs opacity-75" suppressHydrationWarning>• {formatNotificationDate(response.approved_at)}</span>}
                   </div>
                   {response.approval_status === "approved" && (
                     <button

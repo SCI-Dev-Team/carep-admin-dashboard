@@ -38,7 +38,11 @@ export type FarmerResponse = {
   approval_status: "pending" | "approved" | "rejected";
   edited_message: string | null;
   approved_at: string | null;
-};
+  /** True when response has an image (webapp upload or legacy Telegram photo) */
+  has_image?: boolean;
+  /** URL when image was stored on GCP (price-images folder) */
+  image_url?: string | null;
+}
 
 export type MessageTemplate = {
   id: string;
@@ -55,7 +59,7 @@ export const MESSAGE_TEMPLATES: MessageTemplate[] = [
     id: "ask_prices",
     label: "សុំតម្លៃថ្ងៃនេះ – សាឡាត ត្រសក់ ខាប់ផ្កាយ... (Ask today's prices)",
     subject: "សុំតម្លៃអាហារបន្លៃ",
-    message: "សួស្តី! យើងចង់សុំតម្លៃអាហារបន្លៃថ្ងៃនេះពីអ្នក រួមមាន៖ សាឡាត (cabbage) ត្រសក់ (cucumber) ខាប់ផ្កាយ (cauliflower) និងអាហារបន្លៃផ្សេងទៀត។ សូមចុចប៊ូតុងខាងក្រោមដើម្បីដាក់ស្នើតម្លៃរបស់អ្នក។ សូមអរគុណ!",
+    message: "សួស្តី! យើងចង់សុំតម្លៃអាហារបន្លៃថ្ងៃនេះពីអ្នក។ សូមចុចប៊ូតុងខាងក្រោម រួមតាមនោះអ្នកអាចផ្ញើរូបថតតម្លៃ ឬបញ្ចូលតម្លៃដោយដៃ។ សូមអរគុណ!",
     includePriceForm: true,
   },
   {

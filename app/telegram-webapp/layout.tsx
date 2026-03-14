@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import "../globals.css";
+import { brand } from "../lib/brand";
 
 export const metadata: Metadata = {
-  title: "ដាក់ស្នើតម្លៃអាហារបន្លៃ - CAREP",
+  title: `ដាក់ស្នើតម្លៃអាហារបន្លៃ - ${brand.projectName}`,
   description: "ដាក់ស្នើតម្លៃអាហារបន្លៃតាម Telegram",
 };
 

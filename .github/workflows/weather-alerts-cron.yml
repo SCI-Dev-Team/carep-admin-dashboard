@@ -1,0 +1,46 @@
+name: Weather Alerts Cron Job
+
+on:
+  schedule:
+    # Run every day at 6:00 AM UTC (13:00 Cambodia Time UTC+7)
+    # Adjust the hour if you want 6 AM Cambodia time instead
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  send-weather-alerts:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Send Weather Alerts
+        run: |
+          response=$(curl -X PUT "${{ secrets.APP_URL }}/api/weather/alerts?auto_send=true&target=all" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP_STATUS:%{http_code}" \
+            -s)
+          
+          http_code=$(echo "$response" | grep "HTTP_STATUS" | cut -d':' -f2)
+          body=$(echo "$response" | sed '/HTTP_STATUS/d')
+          
+          echo "Response: $body"
+          echo "Status Code: $http_code"
+          
+          if [ "$http_code" -ne 200 ]; then
+            echo "Failed to send weather alerts"
+            exit 1
+          fi
+          
+          echo "Weather alerts sent successfully"
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "Weather alerts cron job failed at $(date)"
+          # Optionally send notification to Telegram or other service
+          if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN }}" ] && [ -n "${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}" ]; then
+            curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+              -H "Content-Type: application/json" \
+              -d "{\"chat_id\": \"${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}\", \"text\": \"⚠️ Weather Alerts Cron Job Failed\\n\\nTime: $(date)\\nWorkflow: ${{ github.workflow }}\"}"
+          fi

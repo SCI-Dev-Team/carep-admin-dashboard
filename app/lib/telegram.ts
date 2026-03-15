@@ -1,6 +1,50 @@
 /**
- * Shared Telegram API helpers (getChat name, etc.).
+ * Shared Telegram API helpers (getChat name, initData validation, etc.).
  */
+
+import { createHmac } from "crypto";
+
+export interface TelegramWebAppUser {
+  id: number;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+}
+
+/**
+ * Validate Telegram Web App initData and extract user.
+ * See https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+ * Returns user { id, first_name, last_name, username } or null if invalid/missing.
+ */
+export function parseAndValidateTelegramInitData(initData: string | null | undefined): TelegramWebAppUser | null {
+  if (!initData || typeof initData !== "string" || !initData.trim()) return null;
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) return null;
+
+  const params = new URLSearchParams(initData);
+  const hash = params.get("hash");
+  if (!hash) return null;
+  params.delete("hash");
+
+  const dataCheckString = [...params.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join("\n");
+
+  const secretKey = createHmac("sha256", "WebAppData").update(botToken).digest();
+  const computedHash = createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
+  if (computedHash !== hash) return null;
+
+  const userJson = params.get("user");
+  if (!userJson) return null;
+  try {
+    const user = JSON.parse(userJson) as TelegramWebAppUser;
+    if (typeof user?.id !== "number") return null;
+    return user;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Get display name for a Telegram chat/user via Bot API getChat.

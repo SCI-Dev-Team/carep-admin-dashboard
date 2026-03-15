@@ -224,6 +224,7 @@ export default function TelegramWebApp() {
       formData.append("location", imageProvince);
       if (telegramUser?.id) formData.append("telegram_user_id", String(telegramUser.id));
       if (telegramUser?.name) formData.append("telegram_user_name", telegramUser.name);
+      if (typeof window.Telegram?.WebApp?.initData === "string") formData.append("init_data", window.Telegram.WebApp.initData);
       if (imageCaption.trim()) formData.append("caption", imageCaption.trim());
       const response = await fetch("/api/notifications/webapp", {
         method: "POST",

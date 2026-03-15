@@ -1,0 +1,150 @@
+# User-facing texts – edit the values below to change wording across the app
+# Format: SOURCE_FILE (optional line) | KEY or description
+# Then the text to modify. Change only the text after the colon or on the next line.
+
+# ========== BRAND (app/lib/brand.ts) ==========
+brand.projectName: Save Crops
+brand.tagline: Protecting crops, supporting farmers
+brand.dashboardSubtitle: Admin Dashboard
+
+# ========== TELEGRAM – CONFIRMATIONS / ACKS (sent to farmers) ==========
+# app/api/notifications/webapp/route.ts – after image upload
+confirmation.image_upload: ✅ សូមអរគុណ! យើងបានទទួលរូបថតតម្លៃរបស់អ្នកហើយ។
+
+# app/api/notifications/webapp/route.ts – after form (price report) submit
+confirmation.price_report: ✅ សូមអរគុណសម្រាប់របាយការណ៍តម្លៃ!\n\nយើងបានទទួលតម្លៃអាហារបន្លៃ {count} ប្រកាស ពី{location}។
+# (Note: {count} and {location} are placeholders; location part is " ពីX" or empty)
+
+# app/api/notifications/webhook/route.ts – after text response from farmer
+confirmation.webhook_ack: សូមអរគុណសម្រាប់ការឆ្លើយតប! យើងបានទទួលសាររបស់អ្នកហើយ។
+
+# ========== NOTIFICATIONS – TEMPLATES (app/components/notifications/types.ts) ==========
+template.ask_prices.label: សុំតម្លៃថ្ងៃនេះ – សាឡាត ត្រសក់ ខាប់ផ្កាយ... (Ask today's prices)
+template.ask_prices.subject: សុំតម្លៃអាហារបន្លៃ
+template.ask_prices.message: សួស្តី! យើងចង់សុំតម្លៃអាហារបន្លៃថ្ងៃនេះពីអ្នក។ សូមចុចប៊ូតុងខាងក្រោម រួមតាមនោះអ្នកអាចផ្ញើរូបថតតម្លៃ ឬបញ្ចូលតម្លៃដោយដៃ។ សូមអរគុណ!
+template.custom.label: សរសេរខ្លួនឯង (Write your own)
+
+# ========== NOTIFICATIONS – IN-APP INSTRUCTION (app/api/notifications/route.ts) ==========
+# Appended when include_price_form is true
+notification.price_form_instruction: 👇 ចុចប៊ូតុងខាងក្រោមដើម្បីដាក់ស្នើតម្លៃរបស់អ្នក៖
+
+# ========== BROADCAST MESSAGE (app/components/notifications/NotificationManagement.tsx) ==========
+broadcast.subject: តម្លៃទីផ្សារថ្ងៃនេះ (Today's Market Prices)
+broadcast.message_prefix: 📢 តម្លៃទីផ្សារបានធ្វើបច្ចុប្បន្នភាព!\n\n
+broadcast.message_suffix: \n\n🕐 {datetime} (Cambodia)
+
+# ========== WEATHER ALERTS – KHMER (app/api/weather/alerts/route.ts) ==========
+# ALERT_TYPES – titles and messages
+weather.high_heat.title_kh: 🌡️ សេចក្ដីជូនដំណឹងអំពីសីតុណ្ហភាពខ្ពស់
+weather.high_heat.message_kh: រំពឹងថានឹងមានសីតុណ្ហភាពខ្ពស់ខ្លាំង។ សូមពិកសាទឹកឱ្យបានគ្រប់គ្រាន់ និងកាត់បន្ថយការប៉ះពាល់កម្ដៅថ្ងៃដោយផ្ទាល់ក្នុងរយៈពេលយូរ។
+
+weather.heavy_rain.title_kh: 🌧️ សេចក្ដីជូនដំណឹងអំពីភ្លៀងធ្លាក់ខ្លាំង
+weather.heavy_rain.message_kh: រំពឹងថានឹងមានភ្លៀងធ្លាក់ខ្លាំង។ សូមចាត់វិធានការសមស្របដើម្បីការពារដំណាំ និងជៀសវាងតំបន់ដែលមានហានិភ័យជន់លិច។
+
+weather.strong_wind.title_kh: 💨 សេចក្ដីជូនដំណឹងអំពីខ្យល់បក់ខ្លាំង
+weather.strong_wind.message_kh: រំពឹងថានឹងមានខ្យល់បក់ខ្លាំង។ សូមរៀបចំទុកវត្ថុដែលអាចរលុង និងចាត់វិធានការការពារដំណាំដែលងាយរងគ្រោះ។
+
+weather.fungal_disease_risk.title_kh: 🍄 សេចក្ដីជូនដំណឹងអំពីហានិភ័យជំងឺផ្សិតខ្ពស់
+weather.fungal_disease_risk.message_kh: កម្រិតសំណើម និងសីតុណ្ហភាពបច្ចុប្បន្នអាចបង្កើតលក្ខខណ្ឌសមស្របសម្រាប់ជំងឺផ្សិត។ សូមត្រួតពិនិត្យដំណាំជាប្រចាំ។
+
+weather.air_pollution.title_kh: 😷 សេចក្ដីជូនដំណឹងអំពីគុណភាពខ្យល់
+weather.air_pollution.message_kh: គុណភាពខ្យល់បច្ចុប្បន្នមិនល្អ។ សូមកាត់បន្ថយសកម្មភាពក្រៅផ្ទះ និងពាក់ម៉ាសការពារប្រសិនបើចាំបាច់។
+
+# Weather alert value units (formatAlertValueKhmer)
+weather.unit.celsius: អង្សាសេ
+weather.unit.wind_speed: គ.ម/ម៉ោង
+weather.unit.humidity_label: សំណើម
+weather.unit.temp_label: សីតុណ្ហភាព
+weather.unit.pollution: មីក្រូក្រាម/ម³
+
+# ========== TELEGRAM WEB APP – UI (app/telegram-webapp/page.tsx) ==========
+# Main button (Telegram MainButton)
+webapp.main_button: ដាក់ស្នើតម្លៃ
+
+# Success screen
+webapp.success_title: អរគុណ!
+webapp.success_message: របាយការណ៍តម្លៃរបស់អ្នកត្រូវបានដាក់ស្នើជោគជ័យហើយ។
+
+# Choice screen
+webapp.choice_title: ដាក់ស្នើតម្លៃអាហារបន្លៃ
+webapp.choice_subtitle_with_user: សួស្តី {name}!
+webapp.choice_subtitle_no_user: ជ្រើសរើសរបៀបដាក់ស្នើតម្លៃ
+webapp.choice_option_image: ផ្ញើរូបថតតម្លៃ
+webapp.choice_option_image_desc: ថតរូបថតតម្លៃរបស់អ្នក ឬរូបថតពីផ្សារ
+webapp.choice_option_form: បញ្ចូលតម្លៃដោយដៃ
+webapp.choice_option_form_desc: ជ្រើសរើសអាហារបន្លៃ និងបញ្ចូលតម្លៃតាមទម្រង់
+
+# Image upload screen
+webapp.image_title: ផ្ញើរូបថតតម្លៃ
+webapp.image_subtitle: ថតឬជ្រើសរូបថតពីហ្គាឡារី
+webapp.image_province_label: ខេត្ត / ក្រុង (ចាំបាច់)
+webapp.image_province_hint: ជ្រើសរើសខេត្ត/ក្រុងដែលរូបថតតម្លៃមកពី
+webapp.image_file_label: រូបថតតម្លៃ
+webapp.image_selected: ជ្រើសរើសហើយ:
+webapp.image_caption_label: កំណត់សម្គាល់ (ជម្រើស)
+webapp.image_caption_placeholder: ព័ត៌មានបន្ថែម...
+webapp.image_submit_btn: ដាក់ស្នើរូបថត
+webapp.image_submitting: កំពុងដាក់ស្នើ...
+
+# Form screen
+webapp.form_title: ដាក់ស្នើតម្លៃអាហារបន្លៃ
+webapp.form_subtitle: បញ្ចូលតម្លៃតាមទម្រង់
+webapp.form_province_label: ខេត្ត / ក្រុង
+webapp.form_vegetables_label: ជ្រើសរើសអាហារបន្លៃដើម្បីដាក់ស្នើតម្លៃ
+webapp.form_prices_label: បញ្ចូលតម្លៃ (រៀល)
+webapp.form_price_placeholder: តម្លៃ
+webapp.form_notes_label: កំណត់សម្គាល់ (ជម្រើស)
+webapp.form_notes_placeholder: ព័ត៌មានបន្ថែមអំពីស្ថានភាពផ្សារ...
+webapp.form_submit_btn: ដាក់ស្នើតម្លៃ
+webapp.form_submitting: កំពុងដាក់ស្នើ...
+
+# Province dropdown placeholder
+webapp.province_placeholder: ជ្រើសរើសខេត្ត/ក្រុង
+
+# Units (for price form)
+webapp.unit_kg: ក្នុង១គីឡូ
+webapp.unit_bundle: ក្នុង១ចង្កា
+webapp.unit_piece: ក្នុង១ដុំ
+
+# Vegetable names (Khmer)
+webapp.veg_cauliflower: ផ្កាខាត់ណា
+webapp.veg_cabbage: ស្ពៃក្តោប
+webapp.veg_tomato: ប៉េងប៉ោះ
+webapp.veg_cucumber: ត្រសក់
+webapp.veg_carrot: ការ៉ុត
+webapp.veg_onion: ខ្ទឹមបារាំង
+webapp.veg_garlic: ខ្ទឹមស
+webapp.veg_chili: ម្ទេស
+
+# Toasts (errors)
+webapp.toast.enter_at_least_one_price: សូមបញ្ចូលតម្លៃយ៉ាងតិចមួយ
+webapp.toast.submit_price_failed: ដាក់ស្នើតម្លៃមិនបានជោគជ័យ
+webapp.toast.select_image: សូមជ្រើសរើសរូបថត
+webapp.toast.select_province: សូមជ្រើសរើសខេត្ត/ក្រុង
+webapp.toast.submit_image_failed: ដាក់ស្នើរូបមិនបានជោគជ័យ
+
+# ========== API ERROR MESSAGES (user-facing) ==========
+# app/api/notifications/webapp/route.ts
+api.error.no_image: No image provided
+api.error.province_required: សូមជ្រើសរើសខេត្ត/ក្រុង (Province is required)
+api.error.upload_failed: Failed to upload image to server. Please try again.
+api.error.no_prices: No prices provided
+api.error.submit_failed_generic: ដាក់ស្នើមិនបានជោគជ័យ
+
+# ========== DASHBOARD TOASTS (EN – admin-facing but editable) ==========
+# Notifications
+toast.response_approved: Response approved successfully
+toast.response_rejected: Response rejected
+toast.broadcast_success: Successfully broadcasted prices to {count} user(s)
+toast.broadcast_failed: Failed to broadcast prices
+toast.edit_approved: Response edited and approved
+toast.notifications_sent: Successfully sent notifications to {count} farmer lead(s)
+toast.notifications_failed: Failed to send notifications
+toast.select_one_user: Please select at least one user to broadcast to
+toast.enter_message: Please enter a message
+toast.select_farmer_lead: Please select at least one farmer lead
+# Weather
+toast.weather_alerts_sent: {sent} notification(s) sent{failed_part}
+toast.weather_check_failed: Failed to check alerts
+toast.weather_send_failed: Failed to send alerts
+# (Other dashboard toasts are in ImageManagement, UserManagement, CauliCrud, BadgeCrud, Analytics – mostly "Failed to load", "Updated", etc.)

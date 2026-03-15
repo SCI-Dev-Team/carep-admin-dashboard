@@ -1,0 +1,105 @@
+flowchart TB
+  subgraph Staff["Staff (office team)"]
+    A["Open the dashboard in your browser"]
+    B["Enter your username and password"]
+    C["Click Sign in"]
+    D["Pick a section from the menu on the side"]
+
+    subgraph SectionC["Analytics"]
+      C1["You see a list of what people did in the app"]
+      C2["You can search by typing in the search box"]
+      C3["You can filter by type of action or by user"]
+      C4["Look at the table to see who did what and when"]
+    end
+
+    subgraph SectionD["Diseases"]
+      D1["Choose the crop: cauliflower, cucumber, or cabbage"]
+      D2["You see the list of diseases for that crop"]
+      D3["Click Add new to add a disease, or click one to edit it"]
+      D4["Fill in: name in English, name in Khmer, symptoms, treatment, and reference link"]
+      D5["Click Save to keep it, or Delete to remove it"]
+    end
+
+    subgraph SectionE["Badges"]
+      E1["You see the list of badges users can earn"]
+      E2["Click Add new or click a badge to edit it"]
+      E3["Fill in: badge name, name in Khmer, how to earn it (e.g. 7-day streak or 5 photos), and description"]
+      E4["Click Save to keep it, or Delete to remove it"]
+    end
+
+    subgraph SectionF["Images"]
+      F1["You see the list of photos people sent from the app"]
+      F2["You can filter: show all, only labeled, or only not yet labeled"]
+      F3["Tick the photos you want to work on"]
+      F4["Click Mark as labeled or Mark as unlabeled, or Delete selected"]
+      F5["You can open a photo to see who sent it and what the system thought the disease was"]
+    end
+
+    subgraph SectionG["Users"]
+      G1["You see the list of users and total counts"]
+      G2["You can search by name or filter by role (e.g. farmer lead)"]
+      G3["Click a user to see their activity: what they did and when"]
+      G4["You can change a user's role (e.g. make them a farmer lead) if needed"]
+    end
+
+    subgraph SectionH["Top Contributors"]
+      H1["You see two lists: top by photo uploads and top by price submissions"]
+      H2["Each list shows names, how many they submitted, and location"]
+      H3["Use this to see who is most active and to thank or reward them"]
+    end
+
+    subgraph SectionI["Notifications"]
+      I0["Asking for price: sent automatically once a week to farmer leads (no need to send it yourself)"]
+      I1["For other messages: choose who to send to (farmer leads or all users) and tick the people"]
+      I2["Write your message or pick a ready-made template"]
+      I3["Choose whether to add a price form or voice message option"]
+      I4["Click Send. The message goes to users in Telegram"]
+      I5["See History to view messages already sent (including the automatic weekly price request)"]
+      I6["See Farmer responses to view price reports they sent back; you can approve, edit, or send a reply to more users"]
+    end
+
+    subgraph SectionJ["Weather"]
+      J1a["Pick a province and date"]
+      J2a["See daily summary, hourly forecast, or air quality"]
+    end
+
+    subgraph SectionK["Weather Alerts"]
+      K1["See current alerts (e.g. high heat, heavy rain, strong wind, fungal risk, air pollution)"]
+      K2["Weather alerts are sent automatically once a day to users (or we can send to them ourselves)"]
+      K3["You can see which alerts were sent and view History of past alerts"]
+    end
+  end
+
+  subgraph Citizens["Users (in Telegram)"]
+    T1["Receive a message or see a button in Telegram"]
+    T2["Click the button or link"]
+    T3["The mini app opens inside Telegram"]
+    Choice{"Send a photo or type prices?"}
+    Img["Pick your province and add a photo of the price board"]
+    Img2["Optional: add a short note"]
+    Fm["Pick your province and choose vegetables"]
+    Fm2["Enter price and unit for each vegetable"]
+    Fm3["Optional: add a note"]
+    Send1["Tap Send"]
+    Send2["Tap Send"]
+    Done1["We receive it. Done."]
+    Done2["We receive it. Done."]
+  end
+
+  A --> B --> C --> D
+  D --> C1 & D1 & E1 & F1 & G1 & H1 & I0 & J1a & K1
+  C1 --> C2 --> C3 --> C4
+  D1 --> D2 --> D3 --> D4 --> D5
+  E1 --> E2 --> E3 --> E4
+  F1 --> F2 --> F3 --> F4
+  F3 --> F5
+  G1 --> G2 --> G3 --> G4
+  H1 --> H2 --> H3
+  I0 --> I1 --> I2 --> I3 --> I4
+  I4 --> I5 --> I6
+  J1a --> J2a
+  K1 --> K2 --> K3
+
+  T1 --> T2 --> T3 --> Choice
+  Choice -- Photo --> Img --> Img2 --> Send1 --> Done1
+  Choice -- Type --> Fm --> Fm2 --> Fm3 --> Send2 --> Done2

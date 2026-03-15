@@ -2,7 +2,7 @@
 // API endpoint to receive price submissions from Telegram Web App
 import { NextResponse } from "next/server";
 import { sendNotificationWithVoice } from "@/app/lib/telegram-tts";
-import { getTelegramChatName } from "@/app/lib/telegram";
+import { getTelegramChatName, parseAndValidateTelegramInitData } from "@/app/lib/telegram";
 
 async function withPool<T>(fn: (pool: any) => Promise<T>) {
   const mysql = await import("mysql2/promise");
@@ -79,6 +79,7 @@ export async function POST(request: Request) {
       const file = formData.get("image") as File | null;
       const telegramUserId = formData.get("telegram_user_id");
       const telegramUserName = formData.get("telegram_user_name");
+      const initDataRaw = (formData.get("init_data") as string) || "";
       const caption = (formData.get("caption") as string) || "";
       const location = (formData.get("location") as string) || "";
 
@@ -89,12 +90,20 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "សូមជ្រើសរើសខេត្ត/ក្រុង (Province is required)" }, { status: 400 });
       }
 
-      const userId = telegramUserId ? Number(telegramUserId) : 0;
+      let userId = telegramUserId ? Number(telegramUserId) : 0;
       let userName = (telegramUserName as string) || "";
+      const initUser = parseAndValidateTelegramInitData(initDataRaw);
+      if (initUser) {
+        if (!userId || userId === 0) userId = initUser.id;
+        if (!userName || userName.trim() === "" || userName === "Unknown") {
+          userName = [initUser.first_name, initUser.last_name].filter(Boolean).join(" ").trim() || initUser.username || "";
+          if (!userName) userName = "Unknown";
+        }
+      }
       if (userId > 0 && (!userName || userName.trim() === "" || userName === "Unknown")) {
         const resolved = await getTelegramChatName(userId);
         if (resolved) userName = resolved;
-        else userName = "Unknown";
+        else if (!userName || userName === "Unknown") userName = "Unknown";
       } else if (!userName.trim()) {
         userName = "Unknown";
       }
@@ -193,17 +202,26 @@ export async function POST(request: Request) {
     }
 
     const body: PriceSubmission = await request.json();
-    const { telegram_user_id, telegram_user_name, location, notes, prices } = body;
+    const { telegram_user_id, telegram_user_name, location, notes, prices, init_data: initDataRaw } = body;
 
     if (!prices || prices.length === 0) {
       return NextResponse.json({ error: "No prices provided" }, { status: 400 });
     }
 
+    let formUserId = typeof telegram_user_id === "number" ? telegram_user_id : null;
     let formSenderName = telegram_user_name ?? "";
-    if (telegram_user_id && (!formSenderName || formSenderName.trim() === "" || formSenderName === "Unknown")) {
-      const resolved = await getTelegramChatName(telegram_user_id);
+    const initUser = parseAndValidateTelegramInitData(initDataRaw);
+    if (initUser) {
+      if (!formUserId || formUserId === 0) formUserId = initUser.id;
+      if (!formSenderName || formSenderName.trim() === "" || formSenderName === "Unknown") {
+        formSenderName = [initUser.first_name, initUser.last_name].filter(Boolean).join(" ").trim() || initUser.username || "";
+        if (!formSenderName) formSenderName = "Unknown";
+      }
+    }
+    if (formUserId && (!formSenderName || formSenderName.trim() === "" || formSenderName === "Unknown")) {
+      const resolved = await getTelegramChatName(formUserId);
       if (resolved) formSenderName = resolved;
-      else formSenderName = "Unknown";
+      else if (!formSenderName || formSenderName === "Unknown") formSenderName = "Unknown";
     } else if (!formSenderName.trim()) {
       formSenderName = "Unknown";
     }
@@ -242,7 +260,7 @@ export async function POST(request: Request) {
       const [reportResult]: any = await pool.query(
         `INSERT INTO price_reports (telegram_user_id, telegram_user_name, location, notes) 
          VALUES (?, ?, ?, ?)`,
-        [telegram_user_id || null, telegram_user_name || null, location || null, notes || null]
+        [formUserId ?? null, formSenderName || null, location || null, notes || null]
       );
 
       const reportId = reportResult.insertId;
@@ -291,16 +309,16 @@ export async function POST(request: Request) {
       await pool.query(
         `INSERT INTO farmer_responses (telegram_user_id, telegram_chat_id, sender_name, message) 
          VALUES (?, ?, ?, ?)`,
-        [telegram_user_id || 0, telegram_user_id || 0, formSenderName, fullMessage]
+        [formUserId ?? 0, formUserId ?? 0, formSenderName, fullMessage]
       );
     });
 
     // Send confirmation to user via Telegram (Khmer) + voice
-    if (telegram_user_id) {
+    if (formUserId) {
       const locationPart = location ? ` ពី${location}` : "";
       const confirmationMsg = `✅ សូមអរគុណសម្រាប់របាយការណ៍តម្លៃ!\n\nយើងបានទទួលតម្លៃអាហារបន្លៃ ${prices.length} ប្រកាស${locationPart}។`;
-      await sendTelegramMessage(telegram_user_id, confirmationMsg);
-      await sendNotificationWithVoice(telegram_user_id, confirmationMsg);
+      await sendTelegramMessage(formUserId, confirmationMsg);
+      await sendNotificationWithVoice(formUserId, confirmationMsg);
     }
 
     return NextResponse.json({ 

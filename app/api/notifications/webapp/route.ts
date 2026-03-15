@@ -2,6 +2,7 @@
 // API endpoint to receive price submissions from Telegram Web App
 import { NextResponse } from "next/server";
 import { sendNotificationWithVoice } from "@/app/lib/telegram-tts";
+import { getTelegramChatName } from "@/app/lib/telegram";
 
 async function withPool<T>(fn: (pool: any) => Promise<T>) {
   const mysql = await import("mysql2/promise");
@@ -89,7 +90,14 @@ export async function POST(request: Request) {
       }
 
       const userId = telegramUserId ? Number(telegramUserId) : 0;
-      const userName = (telegramUserName as string) || "Unknown";
+      let userName = (telegramUserName as string) || "";
+      if (userId > 0 && (!userName || userName.trim() === "" || userName === "Unknown")) {
+        const resolved = await getTelegramChatName(userId);
+        if (resolved) userName = resolved;
+        else userName = "Unknown";
+      } else if (!userName.trim()) {
+        userName = "Unknown";
+      }
       const locationTrim = location.trim();
       const message = caption.trim()
         ? `📷 [Image] 📍 ${locationTrim}\n${caption.trim()}`
@@ -191,6 +199,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No prices provided" }, { status: 400 });
     }
 
+    let formSenderName = telegram_user_name ?? "";
+    if (telegram_user_id && (!formSenderName || formSenderName.trim() === "" || formSenderName === "Unknown")) {
+      const resolved = await getTelegramChatName(telegram_user_id);
+      if (resolved) formSenderName = resolved;
+      else formSenderName = "Unknown";
+    } else if (!formSenderName.trim()) {
+      formSenderName = "Unknown";
+    }
+
     // Store the price report in database
     await withPool(async (pool) => {
       // Create price_reports table if it doesn't exist
@@ -274,7 +291,7 @@ export async function POST(request: Request) {
       await pool.query(
         `INSERT INTO farmer_responses (telegram_user_id, telegram_chat_id, sender_name, message) 
          VALUES (?, ?, ?, ?)`,
-        [telegram_user_id || 0, telegram_user_id || 0, telegram_user_name || "Unknown", fullMessage]
+        [telegram_user_id || 0, telegram_user_id || 0, formSenderName, fullMessage]
       );
     });
 

@@ -2,6 +2,7 @@
 // Telegram Webhook endpoint to receive farmer responses
 import { NextResponse } from "next/server";
 import { sendNotificationWithVoice } from "@/app/lib/telegram-tts";
+import { getTelegramChatName } from "@/app/lib/telegram";
 
 async function withPool<T>(fn: (pool: any) => Promise<T>) {
   const mysql = await import("mysql2/promise");
@@ -322,7 +323,25 @@ export async function GET(request: Request) {
            FROM farmer_responses ${whereClause} ORDER BY received_at DESC LIMIT ?`,
           [limit]
         );
-        return rows;
+        return rows as any[];
+      });
+
+      // Resolve "Unknown" sender names from Telegram when we have telegram_user_id
+      const needsResolve = (r: any) =>
+        r.telegram_user_id > 0 &&
+        (!r.sender_name || String(r.sender_name).trim() === "" || String(r.sender_name) === "Unknown");
+      const unknownIds = [...new Set((responses as any[]).filter(needsResolve).map((r: any) => r.telegram_user_id))];
+      const nameByUserId: Record<number, string> = {};
+      await Promise.all(
+        unknownIds.map(async (id) => {
+          const name = await getTelegramChatName(id);
+          if (name) nameByUserId[id] = name;
+        })
+      );
+      (responses as any[]).forEach((r: any) => {
+        if (needsResolve(r) && nameByUserId[r.telegram_user_id]) {
+          r.sender_name = nameByUserId[r.telegram_user_id];
+        }
       });
 
       return NextResponse.json({ responses });

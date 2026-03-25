@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { AuthProvider } from "./AuthContext";
+import { useAuth } from "./AuthContext";
 import { brand } from "@/app/lib/brand";
 
 const AnalyticsDashboard = dynamic(() => import("../analytics/AnalyticsDashboard"), { ssr: false });
@@ -19,6 +19,7 @@ const WeatherAlerts = dynamic(() => import("../weather/WeatherAlerts"), { ssr: f
 type TabId = "analytics" | "diseases" | "badges" | "images" | "users" | "contributors" | "notifications" | "weather" | "alerts";
 
 export default function AppShell() {
+  const { logout } = useAuth();
   const [tab, setTab] = useState<TabId>("analytics");
   const [visitedTabs, setVisitedTabs] = useState<Set<TabId>>(() => new Set(["analytics"]));
 
@@ -112,8 +113,7 @@ export default function AppShell() {
   ];
 
   return (
-    <AuthProvider>
-      <div className="min-h-screen flex bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 to-slate-100">
         {/* Sidebar */}
         <aside className="w-64 bg-white border-r border-slate-200 shadow-sm flex flex-col">
           {/* Logo */}
@@ -157,7 +157,16 @@ export default function AppShell() {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-slate-200">
+          <div className="p-4 border-t border-slate-200 space-y-3">
+            <button
+              onClick={logout}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Logout
+            </button>
             <div className="bg-slate-50 rounded-lg p-3">
               <p className="text-xs font-medium text-slate-600">Need help?</p>
               <p className="text-xs text-slate-400 mt-0.5">Contact support@carep.org</p>
@@ -214,7 +223,6 @@ export default function AppShell() {
           )}
         </main>
       </div>
-    </AuthProvider>
   );
 }
 

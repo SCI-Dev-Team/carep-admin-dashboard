@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: `${brand.projectName} Admin Dashboard - ${brand.tagline}`,
-  description: `${brand.projectName} Project Admin Dashboard for Analytics and Disease Management - ${brand.tagline} Organization`,
+  title: `${brand.projectName} - AI-Powered Crop Disease Detection`,
+  description: `${brand.projectName} uses deep learning and AI to detect crop diseases and provide personalized curing recommendations. ${brand.tagline}`,
 };
 
 export default function RootLayout({

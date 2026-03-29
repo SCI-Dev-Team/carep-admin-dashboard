@@ -1,0 +1,323 @@
+# Dashboard: Functions and Features (Simple Guide)
+
+This document lists every function, feature, and option in the admin dashboard in simple terms, for non-IT staff.
+
+---
+
+## 1. Logging in
+
+- **Username** – Type the username you were given (e.g. admin).
+- **Password** – Type your password. The field hides what you type.
+- **Sign in** – Click to log in. If wrong, you see an error message.
+- **Cancel** – Clears the username and password boxes.
+- **Logout** – (After you are in.) Click to sign out. You will need to sign in again to use the dashboard.
+
+---
+
+## 2. Analytics
+
+**What it is:** A list of everything people did in the Telegram app (events).
+
+**Features and options:**
+
+- **Search box** – Type any word or number. The table will show only rows that contain that text (in event type, user ID, event data, or time).
+- **Filter by action type** – Click one or more action types (e.g. “app opened”, “image uploaded”, “menu action”, “prediction success”, “image submitted”). The table shows only those events.
+- **Filter by user** – Click one or more user IDs. The table shows only events from those users.
+- **Table** – Shows: event ID, user ID, type of action, event data, and time. You can scroll and read who did what and when.
+- **Export CSV** – Downloads the list you see on screen into a spreadsheet file (CSV) so you can open it in Excel or similar.
+- **Refresh** – Reloads the list from the server so you see the latest events.
+- **Logout** – Signs you out (same as in section 1).
+
+**Summary cards at the top:** Total events, and counts by type (e.g. app opened, image uploaded, etc.).
+
+**Pagination:** “Previous” and “Next” (and page number) to move through pages of events.
+
+---
+
+## 3. Diseases
+
+**What it is:** Manage the list of crop diseases (name, symptoms, treatment) that the app shows to farmers. This list is used when the model detects a disease in a photo.
+
+**Features and options:**
+
+- **Crop switcher** – Choose which crop you are editing:
+  - **Cauliflower**
+  - **Cucumber**
+  - (Cabbage if available in your menu)
+- **Refresh** – Reloads the disease list for the selected crop.
+- **Add Disease** – Opens a form to add a new disease.
+- **Close** – Leaves the Diseases section and goes back to the menu.
+
+**When you add or edit a disease, you fill in:**
+
+- **Disease code** – A short code (e.g. ABC01) used inside the system. Use letters/numbers, no spaces.
+- **Status** – **Active** (disease is shown in the app) or **Inactive** (hidden from the app).
+- **Name (English)** – The disease name in English.
+- **Name (Khmer)** – The disease name in Khmer.
+- **Symptoms** – Describe what the plant looks like when it has this disease (e.g. spots, wilting).
+- **Cure / Treatment** – Describe what the farmer can do to treat it (e.g. spray, remove leaves).
+- **Reference** – (If shown.) A link to more information (e.g. a website).
+
+**Buttons in the form:**
+
+- **Cancel** – Closes the form without saving.
+- **Save Changes** or **Add Disease** – Saves the disease. You see a success message.
+
+**In the disease list (table):**
+
+- **Click a row** – Expands it to show full symptoms and treatment.
+- **Edit** – Opens the form with that disease so you can change it.
+- **Delete** – Asks you to confirm; then removes that disease from the list.
+
+**Summary cards:** Total diseases, Active count, Inactive count.
+
+---
+
+## 4. Badges
+
+**What it is:** Badges are rewards users earn (e.g. “7-day streak”, “5 photos uploaded”). You create and edit them here.
+
+**Features and options:**
+
+- **Refresh** – Reloads the list of badges.
+- **New Badge** – Opens a form to create a new badge.
+- **Close** – Leaves the Badges section.
+
+**When you add or edit a badge, you fill in:**
+
+- **Name (English)** – The badge name in English (e.g. “Week Warrior”).
+- **Name (Khmer)** – The badge name in Khmer.
+- **Slug** – A short technical name (e.g. “week-warrior”). Use lowercase letters, numbers, and hyphens only. No spaces.
+- **Criteria type** – How the user earns the badge:
+  - **Streak Days** – They use the app on consecutive days (e.g. 7 days in a row).
+  - **Images Uploaded** – They upload a number of photos (e.g. 5).
+- **Criteria value** – The number (e.g. 7 for 7 days, or 5 for 5 images).
+- **Icon** – An emoji (e.g. 🏆) or a link to an image URL. Shown next to the badge.
+- **Description** – Short text explaining how to earn the badge (shown to users).
+
+**Buttons in the form:**
+
+- **Cancel** – Closes the form without saving.
+- **Save Changes** or **Create Badge** – Saves the badge.
+
+**In the badge list:**
+
+- **Edit** – Opens the form to change that badge.
+- **Delete** – Asks to confirm; then removes the badge.
+
+**Summary cards:** Total badges, Streak badges count, Upload badges count.
+
+---
+
+## 5. Images
+
+**What it is:** Photos that users sent from the Telegram app. You review them and say whether the model’s disease detection was correct or wrong. Correct ones are used later to improve the model.
+
+**Features and options:**
+
+- **Refresh** – Reloads the list of images.
+- **Close** – Leaves the Images section.
+
+**Filter (dropdown):**
+
+- **All Images** – Show every photo.
+- **Unlabeled Only** – Show only photos you have not yet marked as correct or wrong.
+- **Labeled/Correct** – Show only photos you marked as “correct” (model was right).
+
+**Selecting images:**
+
+- **Tick box on each row** – Select one or more images.
+- **Select all on page** – Select every image on the current page. Click again to deselect all on the page.
+
+**Actions (after you select at least one image):**
+
+- **Mark as labeled** – Use this when the model’s detection was **correct**. These images will be used to improve the model. Tick the photo(s) and click this.
+- **Mark as unlabeled** – Use when you want to remove the “correct” mark (e.g. you changed your mind, or the detection was wrong and you had marked it by mistake).
+- **Delete selected** – Permanently deletes the selected image(s) from the system. You are asked to confirm. Use for wrong or useless photos so they are not used for the model.
+
+**Opening a single image:** Click or open the image to see:
+
+- Who sent it (user).
+- What the model thought the disease was (disease name/code).
+- Confidence (if shown).
+
+**Summary cards:** This page count, Labeled count, Unlabeled count, Missing (file not found) count.
+
+**Pagination:** Previous / Next and page number to move through pages of images.
+
+---
+
+## 6. Users
+
+**What it is:** A list of everyone who uses the Telegram app. You can see their details, their activity, and change their role (e.g. make someone a “farmer lead” so they get the weekly price request).
+
+**Features and options:**
+
+- **Refresh** – Reloads the user list and the summary numbers.
+- **Close** – Leaves the Users section.
+
+**Filter – Role:**
+
+- **All Users** – Show everyone.
+- **Normal Users** – Only people who are not farmer leads.
+- **Farmer Leads** – Only people you marked as farmer leads (they get the weekly price request and can be chosen when you send notifications).
+
+**Search:** Type a **User ID** in the search box and click **Search** to find one user.
+
+**Table columns:** User ID, Name (Telegram name), Gender, Age range, Location, Uploads (number of photos), Streak (best consecutive days), Joined (date), Role.
+
+**Role (dropdown in each row):**
+
+- **Normal User** – Default. They do not get the automatic weekly price request.
+- **Farmer Lead** – They get the automatic weekly price request and can be selected when you send notifications. Change the dropdown to “Farmer Lead” to add them; change back to “Normal User” to remove.
+
+**Clicking a row:** Opens an **Activity** panel for that user showing what they did and when (same kinds of events as in Analytics, but only for that user). You can close the panel when done.
+
+**Summary cards:** Total users, Normal users count, Farmer leads count.
+
+**Pagination:** Previous / Next to move through pages of users.
+
+---
+
+## 7. Top Contributors
+
+**What it is:** Two lists showing who submitted the most: (1) by photo uploads, (2) by price submissions. Use this to see who is most active and to thank or reward them.
+
+**Features and options:**
+
+- **Two tabs or lists:**
+  - **Top by photo uploads** – People who uploaded the most disease/plant photos. Shows rank, name, number of uploads, and optionally location.
+  - **Top by price submissions** – People who sent the most price reports. Shows rank, name, number of submissions (and optionally approved count), location.
+- **Close** – Leaves the Top Contributors section.
+
+No filters or edit options here; it is for viewing only.
+
+---
+
+## 8. Notifications
+
+**What it is:** Send messages to users in Telegram (e.g. reminders, updates). The **asking for price** message is sent automatically once a week to farmer leads; here you send other messages and manage farmer responses (price reports they send back).
+
+**Tabs:**
+
+- **Send Notifications** – Compose and send a message to chosen users.
+- **History** – List of messages you already sent (including the automatic weekly price request).
+- **Farmer Responses** – Price reports that farmers sent back; you can approve, reject, edit, or broadcast them.
+
+---
+
+### Tab: Send Notifications
+
+**Choose who receives the message:**
+
+- **Farmer leads** – List of users with role “Farmer Lead”. Tick the people who should get the message. Use “Select all” to tick everyone in that list.
+- **All users** – List of all users. Tick who should get the message. Use “Select all” to tick everyone.
+
+You must tick at least one person before sending.
+
+**Compose the message:**
+
+- **Subject** – Short title (e.g. “Weekly reminder”).
+- **Message** – The main text you want to send.
+- **Templates** – If available, you can pick a ready-made message (e.g. “Ask today’s prices”) and then edit the subject and message if you want.
+- **Include price form** – If you turn this **on**, the message will include a button that opens the price-submission form so users can send prices back easily.
+- **Include voice** – If you turn this **on**, users can reply with a voice message option (if supported).
+
+**Send** – Sends the message to all selected users in Telegram. You see how many were sent. The message appears in **History**.
+
+**Automatic weekly price request:** You do **not** send this yourself. It is sent automatically once a week to all farmer leads. You can see it in History.
+
+---
+
+### Tab: History
+
+- **List** – Each row is one message you sent (or the system sent). You see subject, message preview, when it was sent, and how many users received it.
+- **Refresh** – Reloads the history list.
+- **Pagination** – Previous / Next to see more past messages.
+
+---
+
+### Tab: Farmer Responses
+
+These are the price reports that farmers sent back (e.g. after the weekly price request or after a message with “include price form”).
+
+**Features and options:**
+
+- **Mark all as read** – Marks every response as read (removes the “unread” count).
+- **Refresh** – Reloads the list of responses.
+
+**For each response you can:**
+
+- **Approve** – Mark it as approved. The price data can then be used (e.g. shown or broadcast).
+- **Reject** – Mark it as rejected. It will not be used.
+- **Edit & Approve** – Open a form where you can change:
+  - Location (province)
+  - List of vegetables and prices (and units)
+  - Notes  
+  Then save; the response is saved as edited and marked approved. The edited version is what will be used or broadcast.
+- **Broadcast** – Send this price report (or the edited version) to more users. You choose which users (tick them or “Select all”), then click to send. They receive it as a normal Telegram message (today’s market prices).
+
+**Unread count:** Shown on the “Farmer Responses” tab. After you open or mark responses, this number goes down.
+
+---
+
+## 9. Weather
+
+**What it is:** View weather forecasts and air quality by province and date. No sending here; it is for viewing only.
+
+**Features and options:**
+
+- **Refresh** – Reloads weather and air quality data.
+- **Province** – Dropdown to choose one province or “All Provinces”.
+- **Date** – Dropdown to choose the forecast date.
+
+**Tabs:**
+
+- **Daily Forecast** – Summary for the day (e.g. min/max temperature, humidity) for the selected province and date.
+- **Hourly Forecast** – Hour-by-hour weather (temperature, humidity, wind, conditions) for the selected province and date.
+- **Air Quality** – Air quality data (e.g. CO, SO2, dust) and a simple status (Good, Moderate, Unhealthy, etc.) for the selected province and date.
+
+---
+
+## 10. Weather Alerts
+
+**What it is:** See which weather alerts are active (e.g. high heat, heavy rain, strong wind, fungal disease risk, air pollution) and send them to users in Telegram. Alerts can also be sent automatically once a day; here you can send them yourself if you want.
+
+**Features and options:**
+
+- **Refresh** – Reloads the list of current alerts and the history of sent alerts.
+- **Date filter** – Show alerts for **Today**, **Tomorrow**, or **Both**.
+- **Current / History tabs:**
+  - **Current** – Alerts that are active for the selected date(s). Each row shows type, province, severity, message, and value/threshold if applicable.
+  - **History** – Alerts you (or the system) already sent: when, to how many users, and for which province and date.
+
+**Sending alerts manually:**
+
+- **Target users** – Choose “All users” or “Farmer leads only”.
+- **Tick** the alerts you want to send (only alerts that are not already sent can be ticked).
+- **Select all** – Ticks all sendable alerts on the page (or deselects all).
+- **Send** – Sends the selected alerts to the chosen users in Telegram. You see how many notifications were sent. Those alerts then appear in History and cannot be sent again for the same type/province/date.
+
+**Automatic daily alerts:** Weather alerts can be sent automatically once a day. You can still use this screen to send specific alerts yourself when needed.
+
+**Alert types (examples):** High heat, Heavy rain, Strong wind, Fungal disease risk, Air pollution. Each has a title and message in Khmer (and often in English) explaining the risk and what to do.
+
+---
+
+## Summary table
+
+| Section           | Main purpose                                      | Key actions                                                                 |
+|-------------------|---------------------------------------------------|-----------------------------------------------------------------------------|
+| Analytics         | See what users did in the app                     | Search, filter by action/user, export CSV, refresh                         |
+| Diseases          | Manage disease info for crops                     | Add/edit/delete disease; set Active/Inactive; symptoms, treatment, reference|
+| Badges            | Manage achievement badges                        | Add/edit/delete badge; set criteria (streak or uploads) and value           |
+| Images            | Review photos and model detection                 | Mark as labeled (correct) or unlabeled/delete (wrong); filter; pagination   |
+| Users             | Manage user list and roles                        | Search, filter by role, change role (Normal / Farmer lead), view activity   |
+| Top Contributors  | See who contributed most                          | View only (uploads and price submissions)                                   |
+| Notifications     | Send messages and manage farmer responses         | Send to farmer leads or all; History; approve/reject/edit/broadcast responses|
+| Weather           | View forecasts and air quality                    | Choose province and date; Daily / Hourly / Air Quality tabs                |
+| Weather Alerts    | View and send weather alerts                      | Tick alerts, choose audience, Send; view History; automatic daily option   |
+
+---
+
+End of document.

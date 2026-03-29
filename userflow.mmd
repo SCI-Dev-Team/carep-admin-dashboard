@@ -29,10 +29,10 @@ flowchart TB
 
     subgraph SectionF["Images"]
       F1["You see the list of photos people sent from the app"]
-      F2["You can filter: show all, only labeled, or only not yet labeled"]
-      F3["Tick the photos you want to work on"]
-      F4["Click Mark as labeled or Mark as unlabeled, or Delete selected"]
-      F5["You can open a photo to see who sent it and what the system thought the disease was"]
+      F2["Open a photo to see who sent it and what the model detected (the disease)"]
+      F3["If the detection was right: tick the photo and click Mark as labeled. These images will be used to improve the model later"]
+      F4["If the detection was wrong: do not tick it, or click Mark as unlabeled, or Delete. These will not be used for the model"]
+      F5["You can filter the list: show all, only labeled, or only not yet labeled"]
     end
 
     subgraph SectionG["Users"]
@@ -91,8 +91,9 @@ flowchart TB
   C1 --> C2 --> C3 --> C4
   D1 --> D2 --> D3 --> D4 --> D5
   E1 --> E2 --> E3 --> E4
-  F1 --> F2 --> F3 --> F4
-  F3 --> F5
+  F1 --> F2 --> F3
+  F2 --> F4
+  F1 --> F5
   G1 --> G2 --> G3 --> G4
   H1 --> H2 --> H3
   I0 --> I1 --> I2 --> I3 --> I4

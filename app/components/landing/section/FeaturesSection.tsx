@@ -1,4 +1,4 @@
-import { CpuChipIcon, DocumentTextIcon, SparklesIcon } from "../icons";
+import { CpuChipIcon, DocumentTextIcon, SparklesIcon, SpeakerWaveIcon } from "../icons";
 import { useLandingI18n } from "../i18n";
 import { ScrollReveal } from "../ScrollReveal";
 
@@ -20,7 +20,7 @@ export function FeaturesSection() {
           </p>
         </ScrollReveal>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
           {copy.features.items.map((feature, i) => {
             const styles = [
               {
@@ -43,6 +43,13 @@ export function FeaturesSection() {
                 iconColor: "text-emerald-700",
                 border: "border-green-200",
                 tagColor: "bg-emerald-100 text-emerald-700",
+              },
+              {
+                icon: <SpeakerWaveIcon className="w-6 h-6" />,
+                iconBg: "bg-sky-100",
+                iconColor: "text-sky-800",
+                border: "border-sky-200",
+                tagColor: "bg-sky-100 text-sky-800",
               },
             ] as const;
             const style = styles[i] ?? styles[0];

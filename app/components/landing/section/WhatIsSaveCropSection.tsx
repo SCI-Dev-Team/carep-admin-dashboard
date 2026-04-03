@@ -9,48 +9,61 @@ export function WhatIsSaveCropSection() {
   return (
     <section id="what-is-save-crop" className="scroll-mt-28 py-24 px-6 bg-white">
       <div className="max-w-7xl mx-auto">
-        <ScrollReveal className="text-center mb-14">
-          <p className="text-emerald-600 font-bold text-xs uppercase tracking-widest mb-3">
-            {copy.whatIs.badge}
-          </p>
-          <h2 className="text-4xl md:text-5xl font-black text-emerald-950 mb-4 tracking-tight">
-            {copy.whatIs.title}
-          </h2>
-          <p className="text-lg text-emerald-800/70 max-w-3xl mx-auto leading-relaxed">
-            {copy.whatIs.description}
-          </p>
-        </ScrollReveal>
+        <div className="grid lg:grid-cols-12 gap-10 items-start">
+          <ScrollReveal className="lg:col-span-5">
+            <div className="overflow-hidden">
+              <div>
+                <p className="text-emerald-600 font-bold text-xs uppercase tracking-widest">
+                  {copy.whatIs.badge}
+                </p>
+                <h2 className="text-3xl sm:text-4xl font-black text-emerald-950 mt-2 tracking-tight">
+                  {copy.whatIs.title}
+                </h2>
+              </div>
 
-        <ScrollReveal className="mb-10 flex justify-center" delayMs={80}>
-          <div className="w-full max-w-md rounded-3xl bg-linear-to-br from-white to-emerald-50 border border-emerald-100 p-6 shadow-sm">
-            <div className="aspect-4/3 rounded-2xl overflow-hidden bg-white border border-emerald-100">
-              <Image
-                src="/logo/logo.png"
-                alt="Save Crop logo"
-                width={1023}
-                height={1023}
-                className="w-full h-full object-contain p-5"
-              />
+              <div className="p-6">
+                <div className="aspect-4/3 rounded-2xl overflow-hidden ">
+                  <Image
+                    src="/logo/logo.png"
+                    alt="Save Crop logo"
+                    width={1023}
+                    height={1023}
+                    className="w-full h-full object-contain p-6"
+                  />
+                </div>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          <div className="lg:col-span-7">
+            <ScrollReveal>
+              <p className="text-lg text-emerald-900/75 leading-relaxed mb-8">
+                {copy.whatIs.description}
+              </p>
+            </ScrollReveal>
+
+            <div className="space-y-4">
+              {copy.whatIs.points.map((point, i) => (
+                <ScrollReveal key={point.title} delayMs={i * 90}>
+                  <div className="flex gap-4 rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm hover:shadow-md hover:shadow-emerald-100/60 transition-all">
+                    <div className="mt-0.5 w-11 h-11 shrink-0 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 flex items-center justify-center">
+                      {i === 0 && <LeafIcon className="w-5 h-5" />}
+                      {i === 1 && <BoltIcon className="w-5 h-5" />}
+                      {i === 2 && <CheckBadgeIcon className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-emerald-950 leading-snug">
+                        {point.title}
+                      </h3>
+                      <p className="text-sm text-emerald-900/70 leading-relaxed mt-1">
+                        {point.description}
+                      </p>
+                    </div>
+                  </div>
+                </ScrollReveal>
+              ))}
             </div>
           </div>
-        </ScrollReveal>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {copy.whatIs.points.map((point, i) => (
-            <ScrollReveal key={point.title} delayMs={i * 100} className="h-full">
-              <article
-              className="bg-linear-to-br from-white to-emerald-50 border border-emerald-100 rounded-3xl p-7 shadow-sm hover:shadow-lg hover:shadow-emerald-100 transition-all duration-300"
-            >
-              <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-4">
-                {i === 0 && <LeafIcon className="w-5 h-5" />}
-                {i === 1 && <BoltIcon className="w-5 h-5" />}
-                {i === 2 && <CheckBadgeIcon className="w-5 h-5" />}
-              </div>
-              <h3 className="text-xl font-black text-emerald-950 mb-2">{point.title}</h3>
-              <p className="text-sm text-emerald-800/70 leading-relaxed">{point.description}</p>
-              </article>
-            </ScrollReveal>
-          ))}
         </div>
       </div>
     </section>

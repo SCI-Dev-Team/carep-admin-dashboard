@@ -6,7 +6,7 @@
  */
 export const brand = {
   /** Project name shown in sidebar, login, and page titles */
-  projectName: "Save Crops",
+  projectName: "Save Crop",
   /** Short tagline for headers and footers */
   tagline: "Protecting crops, supporting farmers",
   /** Logo image path (public folder). Use the new logo in public/logo/ */

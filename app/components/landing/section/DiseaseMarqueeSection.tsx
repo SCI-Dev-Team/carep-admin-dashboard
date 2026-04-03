@@ -1,10 +1,10 @@
-import { diseases } from "../constants";
+import { marqueeDiseases } from "../constants";
 import { LeafIcon } from "../icons";
 import { useLandingI18n } from "../i18n";
 import { ScrollReveal } from "../ScrollReveal";
 
 export function DiseaseMarqueeSection() {
-  const { copy } = useLandingI18n();
+  const { copy, locale } = useLandingI18n();
 
   return (
     <section className="py-20 bg-emerald-900 overflow-hidden">
@@ -22,13 +22,15 @@ export function DiseaseMarqueeSection() {
 
       <ScrollReveal className="relative overflow-hidden" delayMs={100}>
         <div className="flex gap-4 marquee-track w-max">
-          {[...diseases, ...diseases].map((disease, i) => (
+          {[...marqueeDiseases, ...marqueeDiseases].map((disease, i) => (
             <div
-              key={`${disease}-${i}`}
-              className="shrink-0 flex items-center gap-2.5 bg-emerald-800/60 border border-emerald-700/60 text-emerald-100 rounded-full px-5 py-2.5 text-sm font-medium"
+              key={`${disease.en}-${i}`}
+              className="shrink-0 flex items-center gap-2.5 bg-emerald-800/60 border border-emerald-700/60 text-emerald-100 rounded-full px-5 py-2.5 text-sm font-medium whitespace-normal max-w-[min(92vw,24rem)] sm:max-w-md text-start"
             >
               <LeafIcon className="w-4 h-4 text-emerald-300 shrink-0" />
-              {disease}
+              <span className="leading-snug">
+                {locale === "km" ? disease.km : disease.en}
+              </span>
             </div>
           ))}
         </div>

@@ -1,20 +1,14 @@
-export const diseases = [
-  "Powdery Mildew",
-  "Downy Mildew",
-  "Leaf Blight",
-  "Root Rot",
-  "Mosaic Virus",
-  "Bacterial Spot",
-  "Anthracnose",
-  "Gray Mold",
-  "Early Blight",
-  "Fusarium Wilt",
-  "Leaf Curl",
-  "Damping Off",
-  "Angular Leaf Spot",
-  "Botrytis",
-  "Black Rot",
-];
+/** Diseases aligned with cauliflower_diseases & leaf_diseases (excludes Healthy / Fresh Leaf / inactive rows). */
+export const marqueeDiseases = [
+  { en: "Alternaria Leaf Spot", km: "អាល់ទែណារីយ៉ាអុចស្លឹក" },
+  { en: "Anthracnose", km: "ជំងឺអង់ត្រាកណូស" },
+  { en: "Bacterial Soft Rot", km: "បាក់តេរីរលួយទន់" },
+  { en: "Black Rot", km: "រលួយខ្មៅ" },
+  { en: "Damping Off", km: "ជំងឺរលាកគល់" },
+  { en: "Downy Mildew", km: "ជំងឺអុចពណ៌លឿង" },
+  { en: "Gummy Stem Blight", km: "ជំងឺរលាកចេញជ័រ" },
+  { en: "Powdery Mildew", km: "ជំងឺអុចម៉្សៅពណ៌ស" },
+] as const;
 
 export const cucurbitFamily = [
   { name: "Cucumber", from: "from-green-400", to: "to-emerald-600", light: false, image: "/vegetable/cucumber_family/cucumber.png" },

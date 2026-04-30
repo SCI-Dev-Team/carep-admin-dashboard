@@ -46,7 +46,7 @@ export function HeroSection() {
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-7 sm:mb-9">
             <a
-              href="https://t.me/savecropbot"
+              href="https://t.me/savecropsbot"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-3 bg-emerald-700 hover:bg-emerald-600 text-white px-7 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-base transition-all hover:-translate-y-0.5"

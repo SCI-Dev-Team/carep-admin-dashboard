@@ -250,10 +250,10 @@ const landingDictionaries: Record<LandingLocale, LandingCopy> = {
       badge: "Our Story",
       title: "From Development to Real Farms",
       paragraphOne:
-        "We traveled to Kampot province to test Save Crop directly with local farmers in real farm conditions.",
+        "We traveled to Koh Kong province to test Save Crop directly with local farmers in real farm conditions.",
       paragraphTwo:
         "Many farms really liked our bot, and we received very positive feedback. Their input helped us improve the bot to be simpler, faster, and more useful in daily farming work.",
-      imageAlt: "Save Crop team testing the bot with farmers in Kampot",
+      imageAlt: "Save Crop team testing the bot with farmers in Koh Kong",
     },
     cta: {
       titleLine1: "Your crops deserve",
@@ -424,10 +424,10 @@ const landingDictionaries: Record<LandingLocale, LandingCopy> = {
       badge: "អំពីយើង",
       title: "ពីការបង្កើតថ្មីទៅកាន់ចំការពិត",
       paragraphOne:
-        "ក្រុមការងារយើងបានទៅខេត្តកំពត ដើម្បីសាកល្បង Save Crop ជាមួយកសិករក្នុងស្ថានភាពកសិកម្មពិតប្រាកដ។",
+        "ក្រុមការងារយើងបានទៅខេត្តកកោះកុង ដើម្បីសាកល្បង Save Crop ជាមួយកសិករក្នុងស្ថានភាពកសិកម្មពិតប្រាកដ។",
       paragraphTwo:
         "កសិករជាច្រើនពេញចិត្ត bot របស់ពួកយើង ហើយពួកយើងទទួលបានមតិយោបល់ល្អៗជាច្រើន ដែលជួយឱ្យពួកយើងកែលម្អ bot ឱ្យងាយប្រើ លឿន និងមានប្រយោជន៍ជាងមុនសម្រាប់ការងារប្រចាំថ្ងៃរបស់កសិករ។",
-      imageAlt: "ក្រុម Save Crop សាកល្បង bot ជាមួយកសិករនៅខេត្តកំពត",
+      imageAlt: "ក្រុម Save Crop សាកល្បង bot ជាមួយកសិករនៅខេត្តកកោះកុង",
     },
     cta: {
       titleLine1: "ដំណាំរបស់អ្នកសមនឹង",

@@ -50,7 +50,7 @@ export function CTASection() {
 
                 <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start">
                   <a
-                    href="https://t.me/savecropbot"
+                    href="https://t.me/savecropsbot"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex w-full items-center justify-center gap-2.5 rounded-xl bg-white px-8 py-3.5 text-base font-semibold text-emerald-950 shadow-lg shadow-black/15 transition-colors hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto"

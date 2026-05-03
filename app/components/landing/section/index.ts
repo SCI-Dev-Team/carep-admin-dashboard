@@ -1,3 +1,4 @@
+export { AcknowledgementSection } from "./AcknowledgementSection";
 export { CTASection } from "./CTASection";
 export { DiseaseMarqueeSection } from "./DiseaseMarqueeSection";
 export { FeaturesSection } from "./FeaturesSection";

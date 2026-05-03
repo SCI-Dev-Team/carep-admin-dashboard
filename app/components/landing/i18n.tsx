@@ -97,6 +97,10 @@ type LandingCopy = {
     supportEmail: string;
     botHandle: string;
     copyright: string;
+    acknowledgementTitle: string;
+    acknowledgementParagraph1: string;
+    acknowledgementParagraph2: string;
+    mfatLogoAlt: string;
   };
 };
 
@@ -274,6 +278,12 @@ const landingDictionaries: Record<LandingLocale, LandingCopy> = {
       supportEmail: "support@carep.org",
       botHandle: "@savecropbot",
       copyright: "All rights reserved.",
+      acknowledgementTitle: "Acknowledgement and Disclaimer",
+      acknowledgementParagraph1:
+        "SaveCrops 2.0 has been informed by learning from the CAREP ChatBot initiative, which was supported by MFAT through the CAREP project.",
+      acknowledgementParagraph2:
+        "As SaveCrops 2.0 continues to evolve, any matters related to prior CAREP-supported digital assets, including ownership, licensing, transfer, adaptation, or future commercialization, remain subject to clarification with relevant stakeholders. This acknowledgement does not imply MFAT endorsement, approval, ownership transfer, or current funding support.",
+      mfatLogoAlt: "New Zealand Ministry of Foreign Affairs and Trade (MFAT)",
     },
   },
   km: {
@@ -448,6 +458,12 @@ const landingDictionaries: Record<LandingLocale, LandingCopy> = {
       supportEmail: "support@carep.org",
       botHandle: "@savecropbot",
       copyright: "រក្សាសិទ្ធិគ្រប់យ៉ាង។",
+      acknowledgementTitle: "ការទទួលស្គាល់ និងការបដិសេធទទួលខុសត្រូវ",
+      acknowledgementParagraph1:
+        "SaveCrops 2.0 ត្រូវបានអភិវឌ្ឍដោយឈរលើបទពិសោធន៍ពីគំនិតផ្តួចផ្តើម CAREP ChatBot ដែលទទួលបានការគាំទ្រពី MFAT តាមរយៈគម្រោង CAREP។",
+      acknowledgementParagraph2:
+        "នៅពេល SaveCrops 2.0 បន្តរីកចម្រើន បញ្ហាណាមួយទាក់ទងនឹងទ្រព្យឌីជីថលដែល CAREP ធ្លាប់គាំទ្រ រួមមានកម្មសិទ្ធ អាជ្ញាប័ណ្ណ ការផ្ទេរ ការបម្លែង ឬការធ្វើពាណិជ្ជកម្មនាអនាគត នៅតែរង់ចាំការបកស្រាយច្បាស់លាស់ជាមួយភាគពាក់ព័ន្ធ។ ការទទួលស្គាល់នេះមិនបញ្ជាក់ថា MFAT យល់ស្រប អនុម័ត ផ្ទេរកម្មសិទ្ធ ឬកំពុងផ្តល់មូលនិធិឡើយ។",
+      mfatLogoAlt: "ក្រសួងការបរទេស និងពាណិជ្ជកម្មនៃនូវែលសេឡង់ (MFAT)",
     },
   },
 };

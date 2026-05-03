@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  AcknowledgementSection,
   CTASection,
   DiseaseMarqueeSection,
   FeaturesSection,
@@ -103,6 +104,7 @@ export default function LandingPage() {
           <SupportedCropsSection />
           <OurStorySection />
           <CTASection />
+          <AcknowledgementSection />
           <FooterSection />
         </div>
       </LandingI18nProvider>

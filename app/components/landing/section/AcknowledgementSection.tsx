@@ -13,13 +13,13 @@ export function AcknowledgementSection() {
       <div className="mx-auto max-w-7xl">
         <ScrollReveal>
           <div className="flex flex-col gap-8 sm:flex-row sm:items-center sm:gap-10">
-            <div className="flex w-full shrink-0 justify-center sm:w-36 sm:pt-1">
+            <div className="flex w-full shrink-0 justify-center sm:w-26 sm:pt-1">
               <Image
-                src="/logo/mfat_logo.svg"
+                src="/logo/mfat_logo.jpg"
                 alt={copy.footer.mfatLogoAlt}
-                width={200}
-                height={60}
-                className="h-12 w-auto object-contain object-center opacity-95"
+                width={400}
+                height={120}
+                className="h-28 w-auto max-w-full object-contain object-center opacity-95"
               />
             </div>
             <div className="min-w-0 flex-1 text-center sm:text-left">
